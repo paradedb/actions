@@ -1,0 +1,117 @@
+name: Reusable Upstream Rebase
+
+on:
+  workflow_call:
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+      PARADEDB_GITHUB_APP_CLIENT_ID:
+        required: true
+      PARADEDB_GITHUB_APP_PRIVATE_KEY:
+        required: true
+
+jobs:
+  upstream-rebase:
+    name: Rebase Target on Upstream
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: write
+      checks: read
+      contents: write
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PARADEDB_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+
+      - name: Configure Git
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          git config --global user.name "paradedb-github-app[bot]"
+          git config --global user.email "282009505+paradedb-github-app[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install GitHub CLI
+        run: |
+          gh --version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run Upstream Rebase
+        id: rebase
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          USERNAME_MAPPING_GITHUB_TO_SLACK: ${{ vars.USERNAME_MAPPING_GITHUB_TO_SLACK }}
+        run: |
+          set -euo pipefail
+          ./scripts/sync-upstream.sh rebase
+          echo "✅ Upstream rebase completed successfully"
+          echo "success=true" >> $GITHUB_OUTPUT
+
+      - name: Generate Promotion GitHub App Token
+        id: promotion-app-token
+        if: steps.rebase.outputs.branch_name != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PARADEDB_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: Refresh Checkout Credentials
+        if: steps.rebase.outputs.branch_name != ''
+        env:
+          APP_TOKEN: ${{ steps.promotion-app-token.outputs.token }}
+        run: git remote set-url origin "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Promote Patch Branch
+        if: steps.rebase.outputs.branch_name != ''
+        run: |
+          set -euo pipefail
+          PATCH_BRANCH_NAME="${{ steps.rebase.outputs.branch_name }}"
+          git push origin "$PATCH_BRANCH_NAME:main" --force-with-lease
+          git push origin --delete "$PATCH_BRANCH_NAME"
+
+      - name: Notify Slack on Failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            if [ -f "/tmp/rebase-conflict-slack-payload.json" ]; then
+              JSON_DATA=$(cat /tmp/rebase-conflict-slack-payload.json)
+            else
+              JSON_DATA="{
+                \"text\": \"🚨 Upstream Rebase Failed - <!here>\",
+                \"attachments\": [
+                  {
+                    \"color\": \"danger\",
+                    \"fields\": [
+                      {\"title\": \"Repository\", \"value\": \"${{ github.repository }}\", \"short\": true},
+                      {\"title\": \"Workflow\", \"value\": \"${{ github.workflow }}\", \"short\": true},
+                      {\"title\": \"View Logs\", \"value\": \"<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here>\", \"short\": true}
+                    ]
+                  }
+                ]
+              }"
+            fi
+
+            curl -X POST -H 'Content-type: application/json' \
+              --data "$JSON_DATA" \
+              "$SLACK_WEBHOOK_URL"
+          else
+            echo "Slack webhook not configured, skipping notification"
+          fi

@@ -1,0 +1,118 @@
+name: Reusable Promote Target Patch Branch to Main
+
+on:
+  workflow_call:
+    inputs:
+      branch_name:
+        description: "Branch name to promote (must match target-patch-*)"
+        required: true
+        type: string
+      upstream_repo_url:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+      PARADEDB_GITHUB_APP_CLIENT_ID:
+        required: true
+      PARADEDB_GITHUB_APP_PRIVATE_KEY:
+        required: true
+
+jobs:
+  promote-branch:
+    name: Promote Target Patch Branch to Main
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Manual Approval Before Promotion
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.token }}
+          approvers: philippemnoel,rebasedming,stuhood,mdashti
+          minimum-approvals: 1
+          issue-title: "Promote ${{ inputs.branch_name }} to main?"
+          issue-body: |
+            Please approve or deny the promotion of branch `${{ inputs.branch_name }}` to `main`.
+
+            Run:
+            ```console
+            git remote add upstream ${{ inputs.upstream_repo_url }}
+            git fetch upstream && git fetch origin
+            git range-diff upstream/main origin/main origin/${{ inputs.branch_name }}
+            ```
+            ...to view the diff between this branch and `main`.
+
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PARADEDB_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+
+      - name: Configure Git
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          git config --global user.name "paradedb-github-app[bot]"
+          git config --global user.email "282009505+paradedb-github-app[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Promote Branch to Main
+        id: promote
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euxo pipefail
+          BRANCH_NAME="${{ inputs.branch_name }}"
+          echo "Starting branch promotion process..."
+          echo "Branch: $BRANCH_NAME"
+
+          ./scripts/sync-upstream.sh promote "$BRANCH_NAME"
+
+          echo "✅ Branch promotion completed successfully"
+          echo "success=true" >> "$GITHUB_OUTPUT"
+          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Slack on Failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            BRANCH_NAME="${{ steps.promote.outputs.branch_name || inputs.branch_name || 'unknown' }}"
+
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{
+                \"text\": \"🚨 Branch Promotion Failed - <!here>\",
+                \"attachments\": [
+                  {
+                    \"color\": \"danger\",
+                    \"fields\": [
+                      {\"title\": \"Repository\", \"value\": \"${{ github.repository }}\", \"short\": true},
+                      {\"title\": \"Branch\", \"value\": \"${BRANCH_NAME}\", \"short\": true},
+                      {\"title\": \"Workflow\", \"value\": \"${{ github.workflow }}\", \"short\": true},
+                      {\"title\": \"Triggered By\", \"value\": \"${{ github.actor }}\", \"short\": true},
+                      {\"title\": \"Run ID\", \"value\": \"${{ github.run_id }}\", \"short\": true},
+                      {\"title\": \"View Logs\", \"value\": \"<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here>\", \"short\": false}
+                    ]
+                  }
+                ]
+              }" \
+              "$SLACK_WEBHOOK_URL"
+          else
+            echo "Slack webhook not configured, skipping notification"
+          fi
