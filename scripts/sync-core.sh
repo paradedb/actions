@@ -16,15 +16,15 @@ set -Eeuo pipefail
 
 slack_mention_for_user() {
   local user github_user slack_mention
-  user="$(tr '[:upper:]' '[:lower:]' <<< "$1")"
+  user="$(tr '[:upper:]' '[:lower:]' <<<"$1")"
 
   while IFS='=' read -r github_user slack_mention; do
-    github_user="$(tr '[:upper:]' '[:lower:]' <<< "$github_user")"
+    github_user="$(tr '[:upper:]' '[:lower:]' <<<"$github_user")"
     if [[ "$github_user" == "$user" ]]; then
       echo "$slack_mention"
       return
     fi
-  done <<< "${USERNAME_MAPPING_GITHUB_TO_SLACK:-}"
+  done <<<"${USERNAME_MAPPING_GITHUB_TO_SLACK:-}"
 
   echo "<!here>"
 }
@@ -35,9 +35,9 @@ write_conflict_slack_payload() {
 
   commit_json=$(gh api "repos/${UPSTREAM_REPO}/commits/$commit_sha")
 
-  github_user=$(jq -r '.author.login // .committer.login // ""' <<< "$commit_json")
-  commit_author=$(jq -r '.commit.author.name' <<< "$commit_json")
-  commit_message=$(jq -r '.commit.message | split("\n")[0]' <<< "$commit_json")
+  github_user=$(jq -r '.author.login // .committer.login // ""' <<<"$commit_json")
+  commit_author=$(jq -r '.commit.author.name' <<<"$commit_json")
+  commit_message=$(jq -r '.commit.message | split("\n")[0]' <<<"$commit_json")
 
   slack_mention=$(slack_mention_for_user "$github_user")
 
@@ -53,7 +53,7 @@ write_conflict_slack_payload() {
     --arg author "$commit_author" \
     --arg message "$commit_message" \
     --arg run_url "$run_url" \
-  '{
+    '{
       text: ("🔧 Upstream Rebase Needs Resolution - " + $mention + " (" + $author + ")"),
       attachments: [{
         color: "warning",
@@ -67,7 +67,7 @@ write_conflict_slack_payload() {
           + (if $message == "" then [] else [{title: "Commit Message", value: $message, short: false}] end)
         )
       }]
-    }' > /tmp/rebase-conflict-slack-payload.json
+    }' >/tmp/rebase-conflict-slack-payload.json
 }
 
 report_rebase_conflict() {
@@ -92,7 +92,7 @@ report_rebase_conflict() {
   if [[ -n "$conflict_lines" ]]; then
     while IFS= read -r conflict; do
       echo "  • $conflict"
-    done <<< "$conflict_lines"
+    done <<<"$conflict_lines"
   else
     echo "  (no CONFLICT lines captured — run 'git status' to inspect)"
   fi
@@ -116,8 +116,8 @@ report_rebase_conflict() {
 
 poll_ci_status() {
   local branch_name="$1"
-  local timeout="6000"  # 100 minutes (6000 seconds)
-  local interval="120"  # 2 minutes (120 seconds)
+  local timeout="6000" # 100 minutes (6000 seconds)
+  local interval="120" # 2 minutes (120 seconds)
 
   local commit_sha
   commit_sha=$(git rev-parse "origin/$branch_name")
@@ -131,7 +131,7 @@ poll_ci_status() {
     api_response=$(gh api "repos/${TARGET_REPO}/commits/$commit_sha/check-runs" --paginate)
 
     local ci_check_filter='.name != "Rebase Target on Upstream" and .name != "Promote Target Patch Branch to Main" and .name != "Upstream Rebase"'
-    
+
     local total_checks completed_checks success_checks failure_checks cancelled_checks pending_checks
     total_checks=$(echo "$api_response" | jq -r -s "[.[].check_runs[] | select($ci_check_filter)] | length")
     completed_checks=$(echo "$api_response" | jq -r -s "[.[].check_runs[] | select($ci_check_filter and .status == \"completed\")] | length")
@@ -155,7 +155,7 @@ poll_ci_status() {
         [[ -z "$job_id" ]] && continue
         echo "Restarting job $job_name ($job_id)..."
         gh api -X POST "repos/${TARGET_REPO}/actions/jobs/$job_id/rerun" --silent || echo "⚠️ Failed to restart job $job_name ($job_id) via API"
-      done <<< "$cancelled_jobs"
+      done <<<"$cancelled_jobs"
 
       echo "Waiting 10 seconds for restarted jobs to register..."
       sleep 10
@@ -194,13 +194,14 @@ do_rebase() {
     exit 0
   fi
 
-  local PATCH_BRANCH_NAME="target-patch-$(date -u +%Y-%m-%d-%H%M%S)"
-  git checkout -b "$PATCH_BRANCH_NAME" origin/${TARGET_BRANCH}
+  local PATCH_BRANCH_NAME
+  PATCH_BRANCH_NAME="target-patch-$(date -u +%Y-%m-%d-%H%M%S)"
+  git checkout -b "$PATCH_BRANCH_NAME" origin/"${TARGET_BRANCH}"
 
   local CURRENT_HEAD
   CURRENT_HEAD=$(git rev-parse --short HEAD)
   local UPSTREAM_HEAD
-  UPSTREAM_HEAD=$(git rev-parse --short upstream/${UPSTREAM_BRANCH})
+  UPSTREAM_HEAD=$(git rev-parse --short upstream/"${UPSTREAM_BRANCH}")
 
   echo ""
   echo "✅ Created patch branch '$PATCH_BRANCH_NAME' from origin/${TARGET_BRANCH} ($CURRENT_HEAD)"
@@ -226,7 +227,7 @@ do_rebase() {
       PROCESSED_COUNT=$((PROCESSED_COUNT + 1))
     else
       local conflict_lines
-      conflict_lines="$(tr '\r' '\n' <<< "$rebase_output" | grep '^CONFLICT' || true)"
+      conflict_lines="$(tr '\r' '\n' <<<"$rebase_output" | grep '^CONFLICT' || true)"
       if [[ -z "$conflict_lines" ]]; then
         echo "$rebase_output"
       fi
@@ -254,7 +255,7 @@ do_rebase() {
     fi
 
     if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-      echo "branch_name=$PATCH_BRANCH_NAME" >> "$GITHUB_OUTPUT"
+      echo "branch_name=$PATCH_BRANCH_NAME" >>"$GITHUB_OUTPUT"
     fi
 
     echo "✅ Patch branch '$PATCH_BRANCH_NAME' is ready for promotion."
@@ -268,7 +269,7 @@ do_promote() {
   fi
 
   local BRANCH_NAME="$1"
-  read -r BRANCH_NAME <<< "$BRANCH_NAME"
+  read -r BRANCH_NAME <<<"$BRANCH_NAME"
 
   if ! [[ "$BRANCH_NAME" =~ ^target-patch-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$ ]]; then
     echo "❌ Invalid branch name format: $BRANCH_NAME. Branch name must match pattern: target-patch-YYYY-MM-DD-HHMMSS"
@@ -292,17 +293,18 @@ do_promote() {
     echo "❌ 2. Fix any issues in the branch"
     echo "❌ 3. Push fixes to '$BRANCH_NAME'"
     echo "❌ 4. Re-run this script to try again"
-    exit $CI_EXIT_CODE
+    exit "$CI_EXIT_CODE"
   fi
 
-  local TAG_NAME="manual-promotion-history-$(date -u +%Y-%m-%d-%H%M%S)"
-  echo "Current ${TARGET_BRANCH} branch points to: $(git rev-parse --short origin/${TARGET_BRANCH})"
+  local TAG_NAME
+  TAG_NAME="manual-promotion-history-$(date -u +%Y-%m-%d-%H%M%S)"
+  echo "Current ${TARGET_BRANCH} branch points to: $(git rev-parse --short origin/"${TARGET_BRANCH}")"
   echo "Creating backup tag: $TAG_NAME"
-  git tag "$TAG_NAME" origin/${TARGET_BRANCH}
+  git tag "$TAG_NAME" origin/"${TARGET_BRANCH}"
   git push origin "$TAG_NAME"
 
   echo "Promoting '$BRANCH_NAME' to ${TARGET_BRANCH} branch..."
-  git fetch origin  # Fetch to ensure we have the latest lease
+  git fetch origin # Fetch to ensure we have the latest lease
   git push --force-with-lease origin "$BRANCH_NAME:${TARGET_BRANCH}"
   git push origin --delete "$BRANCH_NAME"
 }
