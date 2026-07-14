@@ -11,11 +11,13 @@ on:
         description: "Comma-separated list of GitHub usernames who can approve"
         required: true
         type: string
+      github_app_client_id:
+        description: "The Client ID for the GitHub App"
+        required: true
+        type: string
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
-      PARADEDB_GITHUB_APP_CLIENT_ID:
-        required: true
       PARADEDB_GITHUB_APP_PRIVATE_KEY:
         required: true
 
@@ -35,7 +37,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ secrets.PARADEDB_GITHUB_APP_CLIENT_ID }}
+          client-id: ${{ inputs.github_app_client_id }}
           private-key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
 
       - name: Checkout Repository

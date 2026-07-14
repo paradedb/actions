@@ -48,6 +48,20 @@ export UPSTREAM_BRANCH="main"
 > The reusable workflows (`reusable-promote.yml`) will `source` your script to dynamically extract these variables to populate Git commands in GitHub issues. Make sure they are `export`ed.
 
 **Step 3: Add proxy workflows**
-Add the tiny proxy GitHub Action workflows to your `.github/workflows/` directory that `uses:` the reusable workflows in this repository. Be sure to pass the `approvers` input to `reusable-promote.yml`.
+Add the tiny proxy GitHub Action workflows to your `.github/workflows/` directory that `uses:` the reusable workflows in this repository.
+You must pass the `github_app_client_id` input (usually from a repository variable) to both reusable workflows. For `reusable-promote.yml`, also pass the `approvers` input.
+
+**Step 4: Configure GitHub Secrets and Variables**
+The reusable workflows require a GitHub App token to perform commits and create pull requests. Ensure the target repository has the following configured:
+
+- **Variables (`vars.*`)**:
+  - `PARADEDB_GITHUB_APP_CLIENT_ID` (Required): The Client ID of the GitHub App. You will pass this as the `github_app_client_id` input.
+  - `USERNAME_MAPPING_GITHUB_TO_SLACK` (Optional): A JSON mapping of GitHub usernames to Slack Member IDs.
+- **Secrets (`secrets.*`)**:
+  - `PARADEDB_GITHUB_APP_PRIVATE_KEY` (Required): The Private Key of the GitHub App.
+  - `SLACK_WEBHOOK_URL` (Optional): A Slack webhook URL to notify on rebase/promotion failures.
+
+> [!NOTE]
+> Ensure you pass `secrets: inherit` in the caller workflow so that the reusable workflows can access these secrets.
 
 For an example of how this is consumed, see the setup in the `paradedb/paradedb-enterprise` repository.
