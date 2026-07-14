@@ -7,7 +7,8 @@ on:
         description: "Branch name to promote (must match target-patch-*)"
         required: true
         type: string
-      upstream_repo_url:
+      approvers:
+        description: "Comma-separated list of GitHub usernames who can approve"
         required: true
         type: string
     secrets:
@@ -30,24 +31,6 @@ jobs:
       pull-requests: read
 
     steps:
-      - name: Manual Approval Before Promotion
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.token }}
-          approvers: philippemnoel,rebasedming,stuhood,mdashti
-          minimum-approvals: 1
-          issue-title: "Promote ${{ inputs.branch_name }} to main?"
-          issue-body: |
-            Please approve or deny the promotion of branch `${{ inputs.branch_name }}` to `main`.
-
-            Run:
-            ```console
-            git remote add upstream ${{ inputs.upstream_repo_url }}
-            git fetch upstream && git fetch origin
-            git range-diff upstream/main origin/main origin/${{ inputs.branch_name }}
-            ```
-            ...to view the diff between this branch and `main`.
-
       - name: Generate GitHub App Token
         id: app-token
         uses: actions/create-github-app-token@v3
@@ -61,6 +44,34 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
+
+      - name: Extract Sync Configuration
+        id: config
+        run: |
+          # Source only the configuration portion of the script to avoid executing it
+          sed -n '/^# 2\. Define the URL/q;p' scripts/sync-upstream.sh > /tmp/sync-config.sh
+          source /tmp/sync-config.sh
+          echo "upstream_repo_url=${UPSTREAM_REPO_URL:-}" >> "$GITHUB_OUTPUT"
+          echo "upstream_branch=${UPSTREAM_BRANCH:-main}" >> "$GITHUB_OUTPUT"
+          echo "target_branch=${TARGET_BRANCH:-main}" >> "$GITHUB_OUTPUT"
+
+      - name: Manual Approval Before Promotion
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.token }}
+          approvers: ${{ inputs.approvers }}
+          minimum-approvals: 1
+          issue-title: "Promote ${{ inputs.branch_name }} to ${{ steps.config.outputs.target_branch }}?"
+          issue-body: |
+            Please approve or deny the promotion of branch `${{ inputs.branch_name }}` to `${{ steps.config.outputs.target_branch }}`.
+
+            Run:
+            ```console
+            git remote add upstream ${{ steps.config.outputs.upstream_repo_url }}
+            git fetch upstream && git fetch origin
+            git range-diff upstream/${{ steps.config.outputs.upstream_branch }} origin/${{ steps.config.outputs.target_branch }} origin/${{ inputs.branch_name }}
+            ```
+            ...to view the diff between this branch and `${{ steps.config.outputs.target_branch }}`.
 
       - name: Configure Git
         env:
