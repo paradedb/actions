@@ -62,6 +62,12 @@ The reusable workflows require a GitHub App token to perform commits and create 
   - `SLACK_WEBHOOK_URL` (Optional): A Slack webhook URL to notify on rebase/promotion failures.
 
 > [!NOTE]
-> Ensure you pass `secrets: inherit` in the caller workflow so that the reusable workflows can access these secrets.
+> Ensure you explicitly map the secrets in the caller workflow so that the reusable workflows can access them:
+>
+> ```yaml
+> secrets:
+>   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
+>   PARADEDB_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
+> ```
 
 For an example of how this is consumed, see the setup in the `paradedb/paradedb-enterprise` repository.
