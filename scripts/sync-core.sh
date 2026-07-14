@@ -310,20 +310,22 @@ do_promote() {
 }
 
 # --- Subcommand Router ---
-COMMAND="${1:-}"
-if [[ -n "$COMMAND" ]]; then
-  shift
-fi
+sync_core_main() {
+  local COMMAND="${1:-}"
+  if [[ -n "$COMMAND" ]]; then
+    shift
+  fi
 
-case "$COMMAND" in
-  rebase)
-    do_rebase "$@"
-    ;;
-  promote)
-    do_promote "$@"
-    ;;
-  *)
-    echo "Usage: $0 {rebase|promote} [args...]"
-    exit 1
-    ;;
-esac
+  case "$COMMAND" in
+    rebase)
+      do_rebase "$@"
+      ;;
+    promote)
+      do_promote "$@"
+      ;;
+    *)
+      echo "Usage: $0 {rebase|promote} [args...]"
+      exit 1
+      ;;
+  esac
+}

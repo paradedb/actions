@@ -44,8 +44,8 @@ export TARGET_BRANCH="main"
 export UPSTREAM_BRANCH="main"
 ```
 
-> [!IMPORTANT]
-> The reusable workflows (`reusable-promote.yml`) dynamically extract these variables directly from your script to populate Git commands in GitHub issues. Ensure they are defined exactly as shown above (using standard `export VAR="value"` syntax) so they can be parsed correctly.
+> [!NOTE]
+> The reusable workflows (`reusable-promote.yml`) will `source` your script to dynamically extract these variables to populate Git commands in GitHub issues. Make sure they are `export`ed.
 
 **Step 3: Add proxy workflows**
 Add the tiny proxy GitHub Action workflows to your `.github/workflows/` directory that `uses:` the reusable workflows in this repository. Be sure to pass the `approvers` input to `reusable-promote.yml`.
