@@ -12,8 +12,11 @@ set -Eeuo pipefail
 : "${TARGET_BRANCH:=main}"
 : "${UPSTREAM_BRANCH:=main}"
 
-TARGET_REMOTE="${TARGET_REMOTE:-$(git remote -v 2>/dev/null | awk -v repo="$TARGET_REPO" '$2 ~ repo {print $1; exit}')}"
+TARGET_REMOTE="${TARGET_REMOTE:-$(git remote -v 2>/dev/null | awk -v repo="$TARGET_REPO" '$2 ~ repo "(\\.git)?/?$" {print $1; exit}')}"
 : "${TARGET_REMOTE:=origin}"
+
+UPSTREAM_REMOTE="${UPSTREAM_REMOTE:-$(git remote -v 2>/dev/null | awk -v repo="$UPSTREAM_REPO" '$2 ~ repo "(\\.git)?/?$" {print $1; exit}')}"
+: "${UPSTREAM_REMOTE:=upstream}"
 
 # --- Helper Functions ---
 
@@ -108,7 +111,7 @@ report_rebase_conflict() {
   echo "  2. Fix the conflicted files above, then continue the rebase:"
   echo "       git add . && git rebase --continue"
   echo "  3. Push the resolved patch branch:"
-  echo "       git push origin HEAD"
+  echo "       git push ${TARGET_REMOTE} HEAD"
   echo "  4. In GitHub: Actions → 'Promote Target Patch Branch to Main',"
   echo "     run it against the target-patch-* branch you just pushed."
   echo "     It waits for manual approval, verifies CI on the patch branch,"
@@ -182,15 +185,15 @@ do_rebase() {
     exit 1
   fi
 
-  if ! git remote | grep -q "upstream"; then
-    git remote add upstream "$UPSTREAM_REPO_URL"
+  if ! git remote | grep -q "${UPSTREAM_REMOTE}"; then
+    git remote add "${UPSTREAM_REMOTE}" "$UPSTREAM_REPO_URL"
   fi
 
-  git fetch upstream
+  git fetch "${UPSTREAM_REMOTE}"
   git fetch "${TARGET_REMOTE}"
 
   local TOTAL_PENDING
-  TOTAL_PENDING=$(git rev-list --count "${TARGET_REMOTE}/${TARGET_BRANCH}..upstream/${UPSTREAM_BRANCH}")
+  TOTAL_PENDING=$(git rev-list --count "${TARGET_REMOTE}/${TARGET_BRANCH}..${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}")
 
   if [[ "$TOTAL_PENDING" -eq 0 ]]; then
     echo "✅ No commits to process. Repository is already up to date with upstream."
@@ -204,7 +207,7 @@ do_rebase() {
   local CURRENT_HEAD
   CURRENT_HEAD=$(git rev-parse --short HEAD)
   local UPSTREAM_HEAD
-  UPSTREAM_HEAD=$(git rev-parse --short upstream/"${UPSTREAM_BRANCH}")
+  UPSTREAM_HEAD=$(git rev-parse --short "${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}")
 
   echo ""
   echo "✅ Created patch branch '$PATCH_BRANCH_NAME' from ${TARGET_REMOTE}/${TARGET_BRANCH} ($CURRENT_HEAD)"
@@ -213,13 +216,13 @@ do_rebase() {
   local PROCESSED_COUNT=0
   while true; do
     local NEXT_COMMIT
-    NEXT_COMMIT=$(git rev-list "HEAD..upstream/${UPSTREAM_BRANCH}" | tail -n 1)
+    NEXT_COMMIT=$(git rev-list "HEAD..${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}" | tail -n 1)
     if [[ -z $NEXT_COMMIT ]]; then
       break
     fi
 
-    if ! git merge-base --is-ancestor "$NEXT_COMMIT" "upstream/${UPSTREAM_BRANCH}"; then
-      echo "❌ Commit $NEXT_COMMIT is not an ancestor of upstream/${UPSTREAM_BRANCH}. This should not happen."
+    if ! git merge-base --is-ancestor "$NEXT_COMMIT" "${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}"; then
+      echo "❌ Commit $NEXT_COMMIT is not an ancestor of ${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}. This should not happen."
       exit 1
     fi
 
