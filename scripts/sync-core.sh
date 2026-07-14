@@ -12,6 +12,9 @@ set -Eeuo pipefail
 : "${TARGET_BRANCH:=main}"
 : "${UPSTREAM_BRANCH:=main}"
 
+TARGET_REMOTE="${TARGET_REMOTE:-$(git remote -v 2>/dev/null | awk -v repo="$TARGET_REPO" '$2 ~ repo {print $1; exit}')}"
+: "${TARGET_REMOTE:=origin}"
+
 # --- Helper Functions ---
 
 slack_mention_for_user() {
@@ -120,7 +123,7 @@ poll_ci_status() {
   local interval="120" # 2 minutes (120 seconds)
 
   local commit_sha
-  commit_sha=$(git rev-parse "origin/$branch_name")
+  commit_sha=$(git rev-parse "${TARGET_REMOTE}/$branch_name")
 
   local elapsed=0
 
@@ -184,10 +187,10 @@ do_rebase() {
   fi
 
   git fetch upstream
-  git fetch origin
+  git fetch "${TARGET_REMOTE}"
 
   local TOTAL_PENDING
-  TOTAL_PENDING=$(git rev-list --count "origin/${TARGET_BRANCH}..upstream/${UPSTREAM_BRANCH}")
+  TOTAL_PENDING=$(git rev-list --count "${TARGET_REMOTE}/${TARGET_BRANCH}..upstream/${UPSTREAM_BRANCH}")
 
   if [[ "$TOTAL_PENDING" -eq 0 ]]; then
     echo "✅ No commits to process. Repository is already up to date with upstream."
@@ -196,7 +199,7 @@ do_rebase() {
 
   local PATCH_BRANCH_NAME
   PATCH_BRANCH_NAME="target-patch-$(date -u +%Y-%m-%d-%H%M%S)"
-  git checkout -b "$PATCH_BRANCH_NAME" origin/"${TARGET_BRANCH}"
+  git checkout -b "$PATCH_BRANCH_NAME" "${TARGET_REMOTE}/${TARGET_BRANCH}"
 
   local CURRENT_HEAD
   CURRENT_HEAD=$(git rev-parse --short HEAD)
@@ -204,8 +207,8 @@ do_rebase() {
   UPSTREAM_HEAD=$(git rev-parse --short upstream/"${UPSTREAM_BRANCH}")
 
   echo ""
-  echo "✅ Created patch branch '$PATCH_BRANCH_NAME' from origin/${TARGET_BRANCH} ($CURRENT_HEAD)"
-  echo "Applying $TOTAL_PENDING upstream commit(s): origin/${TARGET_BRANCH}..$UPSTREAM_HEAD"
+  echo "✅ Created patch branch '$PATCH_BRANCH_NAME' from ${TARGET_REMOTE}/${TARGET_BRANCH} ($CURRENT_HEAD)"
+  echo "Applying $TOTAL_PENDING upstream commit(s): ${TARGET_REMOTE}/${TARGET_BRANCH}..$UPSTREAM_HEAD"
 
   local PROCESSED_COUNT=0
   while true; do
@@ -239,7 +242,7 @@ do_rebase() {
 
   if [[ "$PROCESSED_COUNT" -gt 0 ]]; then
     echo "Pushing patch branch to trigger CI..."
-    git push --set-upstream origin "$PATCH_BRANCH_NAME"
+    git push --set-upstream "${TARGET_REMOTE}" "$PATCH_BRANCH_NAME"
 
     echo "Waiting for CI validation to complete..."
     if ! poll_ci_status "$PATCH_BRANCH_NAME"; then
@@ -276,8 +279,8 @@ do_promote() {
     exit 1
   fi
 
-  git fetch origin
-  git fetch origin "$BRANCH_NAME:$BRANCH_NAME"
+  git fetch "${TARGET_REMOTE}"
+  git fetch "${TARGET_REMOTE}" "$BRANCH_NAME:$BRANCH_NAME"
 
   echo "Polling CI status for branch: $BRANCH_NAME"
 
@@ -298,15 +301,15 @@ do_promote() {
 
   local TAG_NAME
   TAG_NAME="manual-promotion-history-$(date -u +%Y-%m-%d-%H%M%S)"
-  echo "Current ${TARGET_BRANCH} branch points to: $(git rev-parse --short origin/"${TARGET_BRANCH}")"
+  echo "Current ${TARGET_BRANCH} branch points to: $(git rev-parse --short "${TARGET_REMOTE}/${TARGET_BRANCH}")"
   echo "Creating backup tag: $TAG_NAME"
-  git tag "$TAG_NAME" origin/"${TARGET_BRANCH}"
-  git push origin "$TAG_NAME"
+  git tag "$TAG_NAME" "${TARGET_REMOTE}/${TARGET_BRANCH}"
+  git push "${TARGET_REMOTE}" "$TAG_NAME"
 
   echo "Promoting '$BRANCH_NAME' to ${TARGET_BRANCH} branch..."
-  git fetch origin # Fetch to ensure we have the latest lease
-  git push --force-with-lease origin "$BRANCH_NAME:${TARGET_BRANCH}"
-  git push origin --delete "$BRANCH_NAME"
+  git fetch "${TARGET_REMOTE}" # Fetch to ensure we have the latest lease
+  git push --force-with-lease "${TARGET_REMOTE}" "$BRANCH_NAME:${TARGET_BRANCH}"
+  git push "${TARGET_REMOTE}" --delete "$BRANCH_NAME"
 }
 
 # --- Subcommand Router ---
