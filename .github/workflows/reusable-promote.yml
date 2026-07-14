@@ -67,9 +67,8 @@ jobs:
 
             Run:
             ```console
-            git remote add upstream ${{ steps.config.outputs.upstream_repo_url }}
-            git fetch upstream && git fetch origin
-            git range-diff upstream/${{ steps.config.outputs.upstream_branch }} origin/${{ steps.config.outputs.target_branch }} origin/${{ inputs.branch_name }}
+            git fetch <upstream-remote> && git fetch <target-remote>
+            git range-diff <upstream-remote>/${{ steps.config.outputs.upstream_branch }} <target-remote>/${{ steps.config.outputs.target_branch }} <target-remote>/${{ inputs.branch_name }}
             ```
             ...to view the diff between this branch and `${{ steps.config.outputs.target_branch }}`.
 
