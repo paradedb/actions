@@ -48,9 +48,7 @@ jobs:
       - name: Extract Sync Configuration
         id: config
         run: |
-          # Source only the configuration portion of the script to avoid executing it
-          sed -n '/^# 2\. Define the URL/q;p' scripts/sync-upstream.sh > /tmp/sync-config.sh
-          source /tmp/sync-config.sh
+          source scripts/sync-upstream.sh
           echo "upstream_repo_url=${UPSTREAM_REPO_URL:-}" >> "$GITHUB_OUTPUT"
           echo "upstream_branch=${UPSTREAM_BRANCH:-main}" >> "$GITHUB_OUTPUT"
           echo "target_branch=${TARGET_BRANCH:-main}" >> "$GITHUB_OUTPUT"
