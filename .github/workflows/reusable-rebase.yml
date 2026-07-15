@@ -7,6 +7,10 @@ on:
         description: "The Client ID for the GitHub App"
         required: true
         type: string
+      approvers:
+        description: "Comma-separated list of GitHub usernames to notify on failure if the triggerer cannot be mapped"
+        required: true
+        type: string
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
@@ -60,6 +64,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GITHUB_TOKEN: ${{ github.token }}
           USERNAME_MAPPING_GITHUB_TO_SLACK: ${{ vars.USERNAME_MAPPING_GITHUB_TO_SLACK }}
+          APPROVERS: ${{ inputs.approvers }}
         run: |
           set -euo pipefail
           ./scripts/sync-upstream.sh rebase
@@ -92,13 +97,19 @@ jobs:
         if: failure()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          USERNAME_MAPPING_GITHUB_TO_SLACK: ${{ vars.USERNAME_MAPPING_GITHUB_TO_SLACK }}
+          APPROVERS: ${{ inputs.approvers }}
+          ACTOR: ${{ github.actor }}
         run: |
           if [ -n "$SLACK_WEBHOOK_URL" ]; then
             if [ -f "/tmp/rebase-conflict-slack-payload.json" ]; then
               JSON_DATA=$(cat /tmp/rebase-conflict-slack-payload.json)
             else
+              source scripts/sync-upstream.sh
+              SLACK_MENTION=$(slack_mention_for_user "$ACTOR")
+
               JSON_DATA="{
-                \"text\": \"🚨 Upstream Rebase Failed - <!here>\",
+                \"text\": \"🚨 Upstream Rebase Failed - $SLACK_MENTION\",
                 \"attachments\": [
                   {
                     \"color\": \"danger\",

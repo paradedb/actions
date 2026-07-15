@@ -21,16 +21,42 @@ UPSTREAM_REMOTE="${UPSTREAM_REMOTE:-$(git remote -v 2>/dev/null | awk -v repo="$
 # --- Helper Functions ---
 
 slack_mention_for_user() {
-  local user github_user slack_mention
-  user="$(tr '[:upper:]' '[:lower:]' <<<"$1")"
+  local user="$1"
+  local mapped=""
 
-  while IFS='=' read -r github_user slack_mention; do
-    github_user="$(tr '[:upper:]' '[:lower:]' <<<"$github_user")"
-    if [[ "$github_user" == "$user" ]]; then
-      echo "$slack_mention"
+  resolve_one() {
+    local target_user
+    target_user="$(tr '[:upper:]' '[:lower:]' <<<"$1")"
+    while IFS='=' read -r github_user slack_mention; do
+      github_user="$(tr '[:upper:]' '[:lower:]' <<<"$github_user")"
+      if [[ "$github_user" == "$target_user" ]]; then
+        echo "$slack_mention"
+        return 0
+      fi
+    done <<<"${USERNAME_MAPPING_GITHUB_TO_SLACK:-}"
+    return 1
+  }
+
+  if mapped=$(resolve_one "$user"); then
+    echo "$mapped"
+    return
+  fi
+
+  if [[ -n "${APPROVERS:-}" ]]; then
+    local mentions=""
+    IFS=',' read -ra ADDR <<<"$APPROVERS"
+    for approver in "${ADDR[@]}"; do
+      approver="$(echo "$approver" | xargs)"
+      if mapped=$(resolve_one "$approver"); then
+        mentions="${mentions} ${mapped}"
+      fi
+    done
+    mentions="$(echo "$mentions" | xargs)"
+    if [[ -n "$mentions" ]]; then
+      echo "$mentions"
       return
     fi
-  done <<<"${USERNAME_MAPPING_GITHUB_TO_SLACK:-}"
+  fi
 
   echo "<!here>"
 }
