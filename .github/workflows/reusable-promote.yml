@@ -101,13 +101,19 @@ jobs:
         if: failure()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          USERNAME_MAPPING_GITHUB_TO_SLACK: ${{ vars.USERNAME_MAPPING_GITHUB_TO_SLACK }}
+          APPROVERS: ${{ inputs.approvers }}
+          ACTOR: ${{ github.actor }}
         run: |
           if [ -n "$SLACK_WEBHOOK_URL" ]; then
             BRANCH_NAME="${{ steps.promote.outputs.branch_name || inputs.branch_name || 'unknown' }}"
 
+            source scripts/sync-upstream.sh
+            SLACK_MENTION=$(slack_mention_for_user "$ACTOR")
+
             curl -X POST -H 'Content-type: application/json' \
               --data "{
-                \"text\": \"🚨 Branch Promotion Failed - <!here>\",
+                \"text\": \"🚨 Branch Promotion Failed - $SLACK_MENTION\",
                 \"attachments\": [
                   {
                     \"color\": \"danger\",

@@ -49,7 +49,7 @@ export UPSTREAM_BRANCH="main"
 
 **Step 3: Add proxy workflows**
 Add the tiny proxy GitHub Action workflows to your `.github/workflows/` directory that `uses:` the reusable workflows in this repository.
-You must pass the `github_app_client_id` input (usually from a repository variable) to both reusable workflows. For `reusable-promote.yml`, also pass the `approvers` input.
+You must pass the `github_app_client_id` input (usually from a repository variable) to both reusable workflows. You must also pass the `approvers` input to both workflows to configure fallback Slack notifications and (for `reusable-promote.yml`) manual approval.
 
 **Step 4: Configure GitHub Secrets and Variables**
 The reusable workflows require a GitHub App token to perform commits and create pull requests. Ensure the target repository has the following configured:
