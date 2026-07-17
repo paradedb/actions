@@ -20,6 +20,26 @@ UPSTREAM_REMOTE="${UPSTREAM_REMOTE:-$(git remote -v 2>/dev/null | awk -v repo="$
 
 # --- Helper Functions ---
 
+# Fetch the full history of a single branch, and nothing else.
+#
+# A bare `git fetch <remote>` pulls every branch, which for these repositories
+# means dragging down gh-pages and its unrelated, very large history. Only the
+# upstream and target branches take part in the rebase, so fetch just those.
+fetch_branch() {
+  local remote="$1"
+  local branch="$2"
+  local refspec="+refs/heads/${branch}:refs/remotes/${remote}/${branch}"
+  shift 2
+
+  # A shallow checkout (e.g. actions/checkout with fetch-depth: 1) has to be
+  # deepened before rebasing, and --unshallow errors out on a complete repo.
+  if [[ -f "$(git rev-parse --git-path shallow)" ]]; then
+    git fetch --no-tags --unshallow "$remote" "$refspec" "$@"
+  else
+    git fetch --no-tags "$remote" "$refspec" "$@"
+  fi
+}
+
 slack_mention_for_user() {
   local user="$1"
   local mapped=""
@@ -215,8 +235,9 @@ do_rebase() {
     git remote add "${UPSTREAM_REMOTE}" "$UPSTREAM_REPO_URL"
   fi
 
-  git fetch "${UPSTREAM_REMOTE}"
-  git fetch "${TARGET_REMOTE}"
+  # Deepen the target first: it is the remote the checkout is shallow against.
+  fetch_branch "${TARGET_REMOTE}" "${TARGET_BRANCH}"
+  fetch_branch "${UPSTREAM_REMOTE}" "${UPSTREAM_BRANCH}"
 
   local TOTAL_PENDING
   TOTAL_PENDING=$(git rev-list --count "${TARGET_REMOTE}/${TARGET_BRANCH}..${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}")
@@ -308,8 +329,8 @@ do_promote() {
     exit 1
   fi
 
-  git fetch "${TARGET_REMOTE}"
-  git fetch "${TARGET_REMOTE}" "$BRANCH_NAME:$BRANCH_NAME"
+  fetch_branch "${TARGET_REMOTE}" "${TARGET_BRANCH}"
+  fetch_branch "${TARGET_REMOTE}" "$BRANCH_NAME" "+refs/heads/${BRANCH_NAME}:refs/heads/${BRANCH_NAME}"
 
   echo "Polling CI status for branch: $BRANCH_NAME"
 
@@ -336,7 +357,7 @@ do_promote() {
   git push "${TARGET_REMOTE}" "$TAG_NAME"
 
   echo "Promoting '$BRANCH_NAME' to ${TARGET_BRANCH} branch..."
-  git fetch "${TARGET_REMOTE}" # Fetch to ensure we have the latest lease
+  fetch_branch "${TARGET_REMOTE}" "${TARGET_BRANCH}" # Fetch to ensure we have the latest lease
   git push --force-with-lease "${TARGET_REMOTE}" "$BRANCH_NAME:${TARGET_BRANCH}"
   git push "${TARGET_REMOTE}" --delete "$BRANCH_NAME"
 }
