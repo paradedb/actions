@@ -71,7 +71,7 @@ jobs:
             ```console
             ./scripts/sync-upstream.sh range-diff ${{ inputs.branch_name }}
             ```
-            ...to view the diff between this branch and `${{ steps.config.outputs.target_branch }}`. The command reuses your existing remotes (detecting them by URL) and fetches only the branches it compares.
+            ...to view the diff between this branch and `${{ steps.config.outputs.target_branch }}`.
 
       - name: Configure Git
         env:
