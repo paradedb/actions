@@ -37,10 +37,13 @@ jobs:
           client-id: ${{ inputs.github_app_client_id }}
           private-key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
 
+      # Only the scripts are needed here. The rebase deepens this checkout to the
+      # full history of the target and upstream branches, without pulling down
+      # every other branch (notably the large, unrelated gh-pages history).
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
 

@@ -40,10 +40,12 @@ jobs:
           client-id: ${{ inputs.github_app_client_id }}
           private-key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
 
+      # Only the scripts are needed here; the promotion deepens this checkout to
+      # the branches it actually touches. See reusable-rebase.yml.
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
 
