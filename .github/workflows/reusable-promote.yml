@@ -67,12 +67,11 @@ jobs:
           issue-body: |
             Please approve or deny the promotion of branch `${{ inputs.branch_name }}` to `${{ steps.config.outputs.target_branch }}`.
 
-            Run:
+            From a local checkout of the target repository, run:
             ```console
-            git fetch <upstream-remote> && git fetch <target-remote>
-            git range-diff <upstream-remote>/${{ steps.config.outputs.upstream_branch }} <target-remote>/${{ steps.config.outputs.target_branch }} <target-remote>/${{ inputs.branch_name }}
+            ./scripts/sync-upstream.sh range-diff ${{ inputs.branch_name }}
             ```
-            ...to view the diff between this branch and `${{ steps.config.outputs.target_branch }}`.
+            ...to view the diff between this branch and `${{ steps.config.outputs.target_branch }}`. The command reuses your existing remotes (detecting them by URL) and fetches only the branches it compares.
 
       - name: Configure Git
         env:
