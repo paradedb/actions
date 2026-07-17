@@ -43,6 +43,15 @@ fetch_branch() {
   fi
 }
 
+# Add the upstream remote if the checkout does not already have one pointing at
+# UPSTREAM_REPO. TARGET_REMOTE/UPSTREAM_REMOTE are auto-detected above from the
+# configured remotes, so an existing remote (under any name) is reused as-is.
+ensure_upstream_remote() {
+  if ! git remote | grep -q "^${UPSTREAM_REMOTE}$"; then
+    git remote add "${UPSTREAM_REMOTE}" "$UPSTREAM_REPO_URL"
+  fi
+}
+
 slack_mention_for_user() {
   local user="$1"
   local mapped=""
@@ -234,9 +243,7 @@ do_rebase() {
     exit 1
   fi
 
-  if ! git remote | grep -q "${UPSTREAM_REMOTE}"; then
-    git remote add "${UPSTREAM_REMOTE}" "$UPSTREAM_REPO_URL"
-  fi
+  ensure_upstream_remote
 
   # Target first (see fetch_branch): the checkout is shallow against it.
   fetch_branch "${TARGET_REMOTE}" "${TARGET_BRANCH}"
@@ -365,6 +372,30 @@ do_promote() {
   git push "${TARGET_REMOTE}" --delete "$BRANCH_NAME"
 }
 
+# Show the range-diff between a resolved patch branch and the current target,
+# so a reviewer can inspect a rebase before promoting it. Reuses the remote
+# auto-detection above, so it works against whatever the reviewer's remotes are
+# named without adding any.
+do_range_diff() {
+  local BRANCH_NAME="${1:-}"
+  if [[ -z "$BRANCH_NAME" ]]; then
+    echo "❌ Usage: $0 range-diff <branch-name>"
+    exit 1
+  fi
+
+  ensure_upstream_remote
+
+  # Fetch just the three branches the range-diff compares, nothing else.
+  fetch_branch "${UPSTREAM_REMOTE}" "${UPSTREAM_BRANCH}"
+  fetch_branch "${TARGET_REMOTE}" "${TARGET_BRANCH}"
+  fetch_branch "${TARGET_REMOTE}" "${BRANCH_NAME}"
+
+  git range-diff \
+    "${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}" \
+    "${TARGET_REMOTE}/${TARGET_BRANCH}" \
+    "${TARGET_REMOTE}/${BRANCH_NAME}"
+}
+
 # --- Subcommand Router ---
 sync_core_main() {
   local COMMAND="${1:-}"
@@ -379,8 +410,11 @@ sync_core_main() {
     promote)
       do_promote "$@"
       ;;
+    range-diff)
+      do_range_diff "$@"
+      ;;
     *)
-      echo "Usage: $0 {rebase|promote} [args...]"
+      echo "Usage: $0 {rebase|promote|range-diff} [args...]"
       exit 1
       ;;
   esac
