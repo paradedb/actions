@@ -33,6 +33,9 @@ fetch_branch() {
 
   # A shallow checkout (e.g. actions/checkout with fetch-depth: 1) has to be
   # deepened before rebasing, and --unshallow errors out on a complete repo.
+  # --unshallow clears the shallow marker for the whole repo, so only the first
+  # fetch after a shallow checkout actually deepens; callers must therefore fetch
+  # the branch the checkout is shallow against (the target) first.
   if [[ -f "$(git rev-parse --git-path shallow)" ]]; then
     git fetch --no-tags --unshallow "$remote" "$refspec" "$@"
   else
@@ -235,7 +238,7 @@ do_rebase() {
     git remote add "${UPSTREAM_REMOTE}" "$UPSTREAM_REPO_URL"
   fi
 
-  # Deepen the target first: it is the remote the checkout is shallow against.
+  # Target first (see fetch_branch): the checkout is shallow against it.
   fetch_branch "${TARGET_REMOTE}" "${TARGET_BRANCH}"
   fetch_branch "${UPSTREAM_REMOTE}" "${UPSTREAM_BRANCH}"
 
