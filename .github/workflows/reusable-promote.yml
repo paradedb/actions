@@ -21,16 +21,16 @@ on:
       PARADEDB_GITHUB_APP_PRIVATE_KEY:
         required: true
 
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: read
+
 jobs:
   promote-branch:
     name: Promote Target Patch Branch to Main
     runs-on: ubuntu-latest
-
-    permissions:
-      actions: write
-      contents: write
-      issues: write
-      pull-requests: read
 
     steps:
       - name: Generate GitHub App Token
