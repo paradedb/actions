@@ -17,17 +17,18 @@ on:
       PARADEDB_GITHUB_APP_PRIVATE_KEY:
         required: true
 
+permissions:
+  actions: write
+  checks: read
+  contents: write
+  issues: write
+  pull-requests: read
+
 jobs:
   upstream-rebase:
     name: Rebase Target on Upstream
     runs-on: ubuntu-latest
 
-    permissions:
-      actions: write
-      checks: read
-      contents: write
-      issues: write
-      pull-requests: read
 
     steps:
       - name: Generate GitHub App Token
