@@ -121,9 +121,6 @@ jobs:
             # the step aborts before curl and the alert is lost.
             SLACK_MENTION=$(slack_mention_for_user "$ACTOR" || true)
 
-            # Built with jq rather than string interpolation: an unescaped quote,
-            # backslash or newline in any interpolated value produces malformed JSON,
-            # which Slack rejects with `invalid_payload`.
             JSON_DATA=$(jq -n \
               --arg mention "$SLACK_MENTION" \
               --arg repo "$REPO" \
