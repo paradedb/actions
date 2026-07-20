@@ -105,31 +105,56 @@ jobs:
           USERNAME_MAPPING_GITHUB_TO_SLACK: ${{ vars.USERNAME_MAPPING_GITHUB_TO_SLACK }}
           APPROVERS: ${{ inputs.approvers }}
           ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BRANCH_NAME: ${{ steps.promote.outputs.branch_name || inputs.branch_name || 'unknown' }}
         run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            BRANCH_NAME="${{ steps.promote.outputs.branch_name || inputs.branch_name || 'unknown' }}"
-
-            source scripts/sync-upstream.sh
-            SLACK_MENTION=$(slack_mention_for_user "$ACTOR")
-
-            curl -X POST -H 'Content-type: application/json' \
-              --data "{
-                \"text\": \"🚨 Branch Promotion Failed - $SLACK_MENTION\",
-                \"attachments\": [
-                  {
-                    \"color\": \"danger\",
-                    \"fields\": [
-                      {\"title\": \"Repository\", \"value\": \"${{ github.repository }}\", \"short\": true},
-                      {\"title\": \"Branch\", \"value\": \"${BRANCH_NAME}\", \"short\": true},
-                      {\"title\": \"Workflow\", \"value\": \"${{ github.workflow }}\", \"short\": true},
-                      {\"title\": \"Triggered By\", \"value\": \"${{ github.actor }}\", \"short\": true},
-                      {\"title\": \"Run ID\", \"value\": \"${{ github.run_id }}\", \"short\": true},
-                      {\"title\": \"View Logs\", \"value\": \"<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here>\", \"short\": false}
-                    ]
-                  }
-                ]
-              }" \
-              "$SLACK_WEBHOOK_URL"
-          else
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
             echo "Slack webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          source scripts/sync-upstream.sh
+          # `slack_mention_for_user` returns non-zero for an unmapped actor, and
+          # sourcing the script above enables `set -e`, so guard the assignment or
+          # the step aborts before curl and the alert is lost.
+          SLACK_MENTION=$(slack_mention_for_user "$ACTOR" || true)
+
+          # Built with jq rather than string interpolation: an unescaped quote,
+          # backslash or newline in any interpolated value produces malformed JSON,
+          # which Slack rejects with `invalid_payload`.
+          JSON_DATA=$(jq -n \
+            --arg mention "$SLACK_MENTION" \
+            --arg repo "$REPO" \
+            --arg branch "$BRANCH_NAME" \
+            --arg workflow "$WORKFLOW" \
+            --arg actor "$ACTOR" \
+            --arg run_id "$RUN_ID" \
+            --arg run_url "$RUN_URL" \
+            '{
+              text: ("🚨 Branch Promotion Failed - " + $mention),
+              attachments: [{
+                color: "danger",
+                fields: [
+                  {title: "Repository", value: $repo, short: true},
+                  {title: "Branch", value: $branch, short: true},
+                  {title: "Workflow", value: $workflow, short: true},
+                  {title: "Triggered By", value: $actor, short: true},
+                  {title: "Run ID", value: $run_id, short: true},
+                  {title: "View Logs", value: ("<" + $run_url + "|Click here>"), short: false}
+                ]
+              }]
+            }')
+
+          # Slack answers "ok" on success and "invalid_payload" on a malformed body,
+          # both over HTTP, so a rejected notification otherwise looks like a passing
+          # step and the failure goes unannounced.
+          RESPONSE=$(curl -sS -X POST -H 'Content-type: application/json' \
+            --data "$JSON_DATA" "$SLACK_WEBHOOK_URL")
+          if [ "$RESPONSE" != "ok" ]; then
+            echo "Slack rejected the notification: $RESPONSE"
+            echo "Payload was: $JSON_DATA"
+            exit 1
           fi
