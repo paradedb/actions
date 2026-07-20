@@ -29,7 +29,6 @@ jobs:
     name: Rebase Target on Upstream
     runs-on: ubuntu-latest
 
-
     steps:
       - name: Generate GitHub App Token
         id: app-token
