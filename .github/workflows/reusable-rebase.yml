@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       slack_alert_mention:
-        description: "Slack mention to use for upstream rebase failure alerts; falls back to actor and approver mappings when unset"
+        description: "Fallback Slack mention to use for upstream rebase failure alerts when actor and approver mappings are unavailable"
         required: false
         type: string
         default: ""
