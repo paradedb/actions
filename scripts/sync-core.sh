@@ -90,6 +90,11 @@ slack_mention_for_user() {
     fi
   fi
 
+  if [[ -n "${SLACK_ALERT_MENTION:-}" ]]; then
+    echo "$SLACK_ALERT_MENTION"
+    return
+  fi
+
   echo "<!here>"
 }
 

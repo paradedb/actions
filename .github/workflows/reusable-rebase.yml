@@ -11,6 +11,11 @@ on:
         description: "Comma-separated list of GitHub usernames to notify on failure if the triggerer cannot be mapped"
         required: true
         type: string
+      slack_alert_mention:
+        description: "Fallback Slack mention to use for upstream rebase failure alerts when actor and approver mappings are unavailable"
+        required: false
+        type: string
+        default: ""
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
@@ -68,6 +73,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           USERNAME_MAPPING_GITHUB_TO_SLACK: ${{ vars.USERNAME_MAPPING_GITHUB_TO_SLACK }}
           APPROVERS: ${{ inputs.approvers }}
+          SLACK_ALERT_MENTION: ${{ inputs.slack_alert_mention }}
         run: |
           set -euo pipefail
           ./scripts/sync-upstream.sh rebase
@@ -102,6 +108,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           USERNAME_MAPPING_GITHUB_TO_SLACK: ${{ vars.USERNAME_MAPPING_GITHUB_TO_SLACK }}
           APPROVERS: ${{ inputs.approvers }}
+          SLACK_ALERT_MENTION: ${{ inputs.slack_alert_mention }}
           ACTOR: ${{ github.actor }}
           REPO: ${{ github.repository }}
           WORKFLOW: ${{ github.workflow }}
