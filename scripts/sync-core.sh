@@ -56,6 +56,11 @@ slack_mention_for_user() {
   local user="$1"
   local mapped=""
 
+  if [[ -n "${SLACK_ALERT_MENTION:-}" ]]; then
+    echo "$SLACK_ALERT_MENTION"
+    return
+  fi
+
   resolve_one() {
     local target_user
     target_user="$(tr '[:upper:]' '[:lower:]' <<<"$1")"
