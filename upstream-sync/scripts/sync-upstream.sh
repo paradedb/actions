@@ -1,5 +1,5 @@
 #!/bin/bash
-# scripts/sync-upstream.sh
+# upstream-sync/scripts/sync-upstream.sh
 #
 # Wrapper script to execute the centralized upstream sync logic.
 
@@ -14,7 +14,7 @@ export UPSTREAM_BRANCH="main"
 
 # 2. Define the URL to the centralized script
 # Using the raw content URL from the central repository
-CORE_SCRIPT_URL="https://raw.githubusercontent.com/paradedb/actions/v5/scripts/sync-core.sh"
+CORE_SCRIPT_URL="${CORE_SCRIPT_URL:-https://raw.githubusercontent.com/paradedb/actions/v10/upstream-sync/scripts/sync-core.sh}"
 
 # 3. Download and source the core logic as an API
 TMP_SCRIPT=$(mktemp)
