@@ -42,8 +42,8 @@ When the file exists, the action posts it as-is.
 | `color`        | Slack attachment color for generated payloads.                                                 | `danger`                         |
 | `payload_file` | Optional path to a complete Slack JSON payload. If the file exists, it is posted as-is.        | `""`                             |
 | `repository`   | Repository field for generated payloads. Defaults to `GITHUB_REPOSITORY`.                      | `""`                             |
-| `branch`       | Optional branch field for generated payloads. Defaults to `GITHUB_REF_NAME`.                   | `""`                             |
+| `branch`       | Optional branch field for generated payloads.                                                  | `""`                             |
 | `workflow`     | Workflow field for generated payloads. Defaults to `GITHUB_WORKFLOW`.                          | `""`                             |
-| `actor`        | Optional actor field for generated payloads. Defaults to `GITHUB_ACTOR`.                       | `""`                             |
-| `run_id`       | Optional run ID field for generated payloads. Defaults to `GITHUB_RUN_ID`.                     | `""`                             |
+| `actor`        | Optional actor field for generated payloads.                                                   | `""`                             |
+| `run_id`       | Optional run ID field for generated payloads.                                                  | `""`                             |
 | `run_url`      | Run URL for generated payloads. Defaults to the current GitHub Actions run URL when available. | `""`                             |

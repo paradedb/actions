@@ -24,10 +24,10 @@ else
   mention="${SLACK_ALERT_MENTION:-}"
   color="${SLACK_ALERT_COLOR:-danger}"
   repository="${SLACK_ALERT_REPOSITORY:-${GITHUB_REPOSITORY:-unknown}}"
-  branch="${SLACK_ALERT_BRANCH:-${GITHUB_REF_NAME:-}}"
+  branch="${SLACK_ALERT_BRANCH:-}"
   workflow="${SLACK_ALERT_WORKFLOW:-${GITHUB_WORKFLOW:-unknown}}"
-  actor="${SLACK_ALERT_ACTOR:-${GITHUB_ACTOR:-}}"
-  run_id="${SLACK_ALERT_RUN_ID:-${GITHUB_RUN_ID:-}}"
+  actor="${SLACK_ALERT_ACTOR:-}"
+  run_id="${SLACK_ALERT_RUN_ID:-}"
   run_url="${SLACK_ALERT_RUN_URL:-}"
 
   if [[ -z "$run_url" && -n "${GITHUB_SERVER_URL:-}" && -n "${GITHUB_REPOSITORY:-}" && -n "${GITHUB_RUN_ID:-}" ]]; then

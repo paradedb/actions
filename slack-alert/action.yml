@@ -31,7 +31,7 @@ inputs:
     required: false
     default: ""
   branch:
-    description: Optional branch field for generated payloads. Defaults to GITHUB_REF_NAME.
+    description: Optional branch field for generated payloads.
     required: false
     default: ""
   workflow:
@@ -39,11 +39,11 @@ inputs:
     required: false
     default: ""
   actor:
-    description: Optional actor field for generated payloads. Defaults to GITHUB_ACTOR.
+    description: Optional actor field for generated payloads.
     required: false
     default: ""
   run_id:
-    description: Optional run ID field for generated payloads. Defaults to GITHUB_RUN_ID.
+    description: Optional run ID field for generated payloads.
     required: false
     default: ""
   run_url:
