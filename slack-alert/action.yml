@@ -1,0 +1,72 @@
+name: Slack Alert
+description: Post a standardized GitHub Actions alert to Slack.
+
+inputs:
+  webhook_url:
+    description: Slack incoming webhook URL. If empty, the alert is skipped.
+    required: false
+    default: ""
+  mention:
+    description: Optional Slack mention to append to generated alert text, such as <!subteam^ID|@group>.
+    required: false
+    default: ""
+  title:
+    description: Alert title used when text and payload_file are not provided.
+    required: false
+    default: GitHub Actions Workflow Failed
+  text:
+    description: Exact Slack text to send instead of generating text from title and mention.
+    required: false
+    default: ""
+  color:
+    description: Slack attachment color for generated payloads.
+    required: false
+    default: danger
+  payload_file:
+    description: Optional path to a complete Slack JSON payload. If the file exists, it is posted as-is.
+    required: false
+    default: ""
+  repository:
+    description: Repository field for generated payloads. Defaults to GITHUB_REPOSITORY.
+    required: false
+    default: ""
+  branch:
+    description: Optional branch field for generated payloads. Defaults to GITHUB_REF_NAME.
+    required: false
+    default: ""
+  workflow:
+    description: Workflow field for generated payloads. Defaults to GITHUB_WORKFLOW.
+    required: false
+    default: ""
+  actor:
+    description: Optional actor field for generated payloads. Defaults to GITHUB_ACTOR.
+    required: false
+    default: ""
+  run_id:
+    description: Optional run ID field for generated payloads. Defaults to GITHUB_RUN_ID.
+    required: false
+    default: ""
+  run_url:
+    description: Run URL for generated payloads. Defaults to the current GitHub Actions run URL when available.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Post Slack Alert
+      shell: bash
+      env:
+        SLACK_ALERT_WEBHOOK_URL: ${{ inputs.webhook_url }}
+        SLACK_ALERT_MENTION: ${{ inputs.mention }}
+        SLACK_ALERT_TITLE: ${{ inputs.title }}
+        SLACK_ALERT_TEXT: ${{ inputs.text }}
+        SLACK_ALERT_COLOR: ${{ inputs.color }}
+        SLACK_ALERT_PAYLOAD_FILE: ${{ inputs.payload_file }}
+        SLACK_ALERT_REPOSITORY: ${{ inputs.repository }}
+        SLACK_ALERT_BRANCH: ${{ inputs.branch }}
+        SLACK_ALERT_WORKFLOW: ${{ inputs.workflow }}
+        SLACK_ALERT_ACTOR: ${{ inputs.actor }}
+        SLACK_ALERT_RUN_ID: ${{ inputs.run_id }}
+        SLACK_ALERT_RUN_URL: ${{ inputs.run_url }}
+      run: bash "$GITHUB_ACTION_PATH/notify.sh"

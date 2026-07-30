@@ -26,6 +26,12 @@ A Reusable Workflow that runs on a schedule in the target repository. It automat
 
 A Reusable Workflow that requires manual approval to merge a resolved patch branch into the target branch.
 
+### `slack-alert`
+
+A composite action that posts a standardized GitHub Actions alert to Slack.
+It accepts a webhook URL, an optional Slack mention, and optional metadata fields, then verifies that Slack accepted the payload.
+It also supports posting a pre-rendered Slack payload from a file for workflows that need custom formatting.
+
 ## How to use in a new repository
 
 To set up Upstream Sync in a new target repository, follow these steps:
@@ -72,3 +78,30 @@ The reusable workflows require a GitHub App token to perform commits and create 
 > ```
 
 For an example of how this is consumed, see the setup in the `paradedb/paradedb-enterprise` repository.
+
+## Slack alert action
+
+Use `slack-alert` from workflow failure handlers that need to page a Slack user group without duplicating payload construction and response validation.
+
+```yaml
+- name: Notify Slack on Failure
+  if: failure()
+  uses: paradedb/actions/slack-alert@v10
+  with:
+    webhook_url: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
+    mention: "<!subteam^S0BLE20RYPM|@pg_search-maintainers>"
+    title: "${{ github.workflow }} workflow failed"
+    branch: ${{ github.ref_name }}
+```
+
+For custom Slack payloads, write the JSON body to a file and pass `payload_file`.
+When the file exists, the action posts it as-is.
+
+```yaml
+- name: Notify Slack on Failure
+  if: failure()
+  uses: paradedb/actions/slack-alert@v10
+  with:
+    webhook_url: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
+    payload_file: /tmp/slack-payload.json
+```
