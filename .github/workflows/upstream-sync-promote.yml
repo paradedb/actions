@@ -41,7 +41,7 @@ jobs:
           private-key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
 
       # Only the scripts are needed here; the promotion deepens this checkout to
-      # the branches it actually touches. See reusable-rebase.yml.
+      # the branches it actually touches. See upstream-sync-rebase.yml.
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
