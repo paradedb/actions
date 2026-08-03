@@ -57,10 +57,6 @@ jobs:
           echo "upstream_branch=${UPSTREAM_BRANCH:-main}" >> "$GITHUB_OUTPUT"
           echo "target_branch=${TARGET_BRANCH:-main}" >> "$GITHUB_OUTPUT"
 
-      # The app token, not `github.token`: expanding a team slug in `approvers`
-      # reads org team membership, which the repo-scoped `GITHUB_TOKEN` cannot
-      # do. It 404s there, the slug is then treated as a username, and creating
-      # the approval issue fails with `422 assignees invalid`.
       - name: Manual Approval Before Promotion
         uses: trstringer/manual-approval@v1
         with:
