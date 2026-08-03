@@ -40,19 +40,18 @@ For manual promotion, call `.github/workflows/upstream-sync-promote.yml@v10`.
 
 ## Failure alerts
 
-Who gets paged depends on whether the failure can be pinned on a commit:
+Who gets paged depends on whether the failure can be pinned on a commit.
 
-- **Rebase conflict** — exactly one upstream commit is at fault. Its author is
-  paged when they appear in `vars.USERNAME_MAPPING_GITHUB_TO_SLACK`; otherwise
-  they are an outside contributor and `slack_alert_mention` is paged.
-- **CI validation failure, or any other error** — the rebase applied cleanly, so
-  the failure spans the whole batch of rebased commits with no single author to
-  blame. `slack_alert_mention` is paged. Note that `github.actor` is not used
-  here: on a `schedule` run it resolves to whoever last edited the workflow file.
+- **Rebase conflict.** One upstream commit is at fault, so its author is paged
+  when they appear in `vars.USERNAME_MAPPING_GITHUB_TO_SLACK`. An outside
+  contributor will not, so `slack_alert_mention` is paged instead.
+- **CI validation failure, or any other error.** The rebase applied cleanly, so
+  no single commit is at fault and `slack_alert_mention` is paged. `github.actor`
+  is not used, because on a `schedule` run it resolves to whoever last edited the
+  workflow file.
 
-`approvers` is a promotion-approval roster, not an alert routing list. It is only
-paged as a fallback for repositories that set no `slack_alert_mention`, and
-`<!here>` is the last resort when neither is configured.
+`approvers` is a promotion roster, not an alert routing list. It is paged only
+when no `slack_alert_mention` is set, and `<!here>` when neither is configured.
 
 Required repository config:
 

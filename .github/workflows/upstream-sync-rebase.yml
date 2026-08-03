@@ -123,12 +123,10 @@ jobs:
             JSON_DATA=$(cat /tmp/rebase-conflict-slack-payload.json)
           else
             source scripts/sync-upstream.sh
-            # Reached only when the rebase itself succeeded, so this is a CI
-            # validation failure or a script fault rather than a conflict, and no
-            # single commit owns it -- see `slack_mention_for_unattributed_failure`.
-            # It returns non-zero for an unmapped actor, and sourcing the script
-            # above enables `set -e`, so guard the assignment or the step aborts
-            # before curl and the alert is lost.
+            # Reached only when the rebase succeeded, so no single commit owns
+            # the failure. Returns non-zero for an unmapped actor, and sourcing
+            # the script above enables `set -e`, so guard the assignment or the
+            # step aborts before curl and the alert is lost.
             SLACK_MENTION=$(slack_mention_for_unattributed_failure "$ACTOR" || true)
 
             JSON_DATA=$(jq -n \
