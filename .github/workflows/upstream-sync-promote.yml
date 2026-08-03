@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       approvers:
-        description: "Comma-separated list of GitHub usernames who can approve"
+        description: "Comma-separated list of GitHub usernames or org team slugs who can approve"
         required: true
         type: string
       github_app_client_id:
@@ -57,10 +57,14 @@ jobs:
           echo "upstream_branch=${UPSTREAM_BRANCH:-main}" >> "$GITHUB_OUTPUT"
           echo "target_branch=${TARGET_BRANCH:-main}" >> "$GITHUB_OUTPUT"
 
+      # The app token, not `github.token`: expanding a team slug in `approvers`
+      # reads org team membership, which the repo-scoped `GITHUB_TOKEN` cannot
+      # do. It 404s there, the slug is then treated as a username, and creating
+      # the approval issue fails with `422 assignees invalid`.
       - name: Manual Approval Before Promotion
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ github.token }}
+          secret: ${{ steps.app-token.outputs.token }}
           approvers: ${{ inputs.approvers }}
           minimum-approvals: 1
           issue-title: "Promote ${{ inputs.branch_name }} to ${{ steps.config.outputs.target_branch }}?"
