@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       slack_alert_mention:
-        description: "Fallback Slack mention to use for upstream rebase failure alerts when actor and approver mappings are unavailable"
+        description: "Slack mention (typically a user group) to page for upstream rebase failures that are not attributable to a mapped org member"
         required: false
         type: string
         default: ""
@@ -123,10 +123,13 @@ jobs:
             JSON_DATA=$(cat /tmp/rebase-conflict-slack-payload.json)
           else
             source scripts/sync-upstream.sh
-            # `slack_mention_for_user` returns non-zero for an unmapped actor, and
-            # sourcing the script above enables `set -e`, so guard the assignment or
-            # the step aborts before curl and the alert is lost.
-            SLACK_MENTION=$(slack_mention_for_user "$ACTOR" || true)
+            # Reached only when the rebase itself succeeded, so this is a CI
+            # validation failure or a script fault rather than a conflict, and no
+            # single commit owns it -- see `slack_mention_for_unattributed_failure`.
+            # It returns non-zero for an unmapped actor, and sourcing the script
+            # above enables `set -e`, so guard the assignment or the step aborts
+            # before curl and the alert is lost.
+            SLACK_MENTION=$(slack_mention_for_unattributed_failure "$ACTOR" || true)
 
             JSON_DATA=$(jq -n \
               --arg mention "$SLACK_MENTION" \

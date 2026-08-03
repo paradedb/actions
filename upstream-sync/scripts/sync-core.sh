@@ -74,6 +74,16 @@ slack_mention_for_user() {
     return
   fi
 
+  # An unmapped user is an upstream contributor outside the org, so nobody here
+  # is individually responsible. Prefer the repository's alert group over naming
+  # approvers, who are a promotion-approval roster rather than the people on the
+  # hook for this failure. Repositories that configure no group still fall back
+  # to the approvers below.
+  if [[ -n "${SLACK_ALERT_MENTION:-}" ]]; then
+    echo "$SLACK_ALERT_MENTION"
+    return
+  fi
+
   if [[ -n "${APPROVERS:-}" ]]; then
     local mentions=""
     IFS=',' read -ra ADDR <<<"$APPROVERS"
@@ -90,12 +100,23 @@ slack_mention_for_user() {
     fi
   fi
 
+  echo "<!here>"
+}
+
+# Resolve the mention for a failure that cannot be pinned on a single commit --
+# CI validation failures, push errors, and script faults, as opposed to a rebase
+# conflict. Callers pass `github.actor` as a best guess, but on a `schedule` run
+# that is whoever last edited the workflow file rather than anyone connected to
+# the failure, and a failed CI run spans the whole batch of rebased commits with
+# no way to tell which one broke it. Page the repository's alert group when one
+# is configured, and only fall back to actor resolution when it is not.
+slack_mention_for_unattributed_failure() {
   if [[ -n "${SLACK_ALERT_MENTION:-}" ]]; then
     echo "$SLACK_ALERT_MENTION"
     return
   fi
 
-  echo "<!here>"
+  slack_mention_for_user "$1"
 }
 
 write_conflict_slack_payload() {

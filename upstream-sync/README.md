@@ -38,6 +38,22 @@ jobs:
 
 For manual promotion, call `.github/workflows/upstream-sync-promote.yml@v10`.
 
+## Failure alerts
+
+Who gets paged depends on whether the failure can be pinned on a commit:
+
+- **Rebase conflict** — exactly one upstream commit is at fault. Its author is
+  paged when they appear in `vars.USERNAME_MAPPING_GITHUB_TO_SLACK`; otherwise
+  they are an outside contributor and `slack_alert_mention` is paged.
+- **CI validation failure, or any other error** — the rebase applied cleanly, so
+  the failure spans the whole batch of rebased commits with no single author to
+  blame. `slack_alert_mention` is paged. Note that `github.actor` is not used
+  here: on a `schedule` run it resolves to whoever last edited the workflow file.
+
+`approvers` is a promotion-approval roster, not an alert routing list. It is only
+paged as a fallback for repositories that set no `slack_alert_mention`, and
+`<!here>` is the last resort when neither is configured.
+
 Required repository config:
 
 - `vars.PARADEDB_GITHUB_APP_CLIENT_ID`
