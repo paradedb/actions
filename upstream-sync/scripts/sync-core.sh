@@ -74,6 +74,14 @@ slack_mention_for_user() {
     return
   fi
 
+  # An unmapped user is an outside contributor, so nobody here is individually
+  # responsible. Prefer the alert group over the approvers below, who are a
+  # promotion roster rather than an alert routing list.
+  if [[ -n "${SLACK_ALERT_MENTION:-}" ]]; then
+    echo "$SLACK_ALERT_MENTION"
+    return
+  fi
+
   if [[ -n "${APPROVERS:-}" ]]; then
     local mentions=""
     IFS=',' read -ra ADDR <<<"$APPROVERS"
@@ -90,12 +98,20 @@ slack_mention_for_user() {
     fi
   fi
 
+  echo "<!here>"
+}
+
+# Mention for a failure with no single commit at fault, such as a CI validation
+# failure or a push error. Callers pass `github.actor`, but on a `schedule` run
+# that is whoever last edited the workflow file, so prefer the alert group and
+# fall back to actor resolution only when none is configured.
+slack_mention_for_unattributed_failure() {
   if [[ -n "${SLACK_ALERT_MENTION:-}" ]]; then
     echo "$SLACK_ALERT_MENTION"
     return
   fi
 
-  echo "<!here>"
+  slack_mention_for_user "$1"
 }
 
 write_conflict_slack_payload() {
