@@ -29,7 +29,7 @@ jobs:
     uses: paradedb/actions/.github/workflows/upstream-sync-rebase.yml@v10
     with:
       github_app_client_id: ${{ vars.PARADEDB_GITHUB_APP_CLIENT_ID }}
-      approvers: "philippemnoel,rebasedming,stuhood,mdashti"
+      approvers: pg_search-maintainers
       slack_alert_mention: "<!subteam^S0BLE20RYPM|@pg_search-maintainers>"
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
@@ -37,6 +37,29 @@ jobs:
 ```
 
 For manual promotion, call `.github/workflows/upstream-sync-promote.yml@v10`.
+
+Prefer an org team slug for `approvers` over a list of usernames. Both are
+accepted, but a hardcoded list silently drifts from the team it mirrors as
+people join and leave, and nothing surfaces the drift.
+
+## CI gate
+
+The rebase polls for check runs against the `target-patch-*` commit it pushes
+and **fails on a 100-minute timeout if it finds none** — validation cannot be
+skipped. The target repo therefore needs at least one workflow that triggers on
+`push` to `target-patch-*`:
+
+```yaml
+on:
+  push:
+    branches: [main, "target-patch-*"]
+```
+
+Prefer adding the branch to an existing CI workflow's trigger over introducing a
+new workflow file, so the fork carries a smaller conflict surface on rebase.
+Check that the gate can actually pass on the fork: a workflow inherited from
+upstream may depend on constraints the fork has deliberately dropped, in which
+case it will never go green and the sync will never promote.
 
 ## Failure alerts
 
