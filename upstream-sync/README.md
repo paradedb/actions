@@ -29,7 +29,7 @@ jobs:
     uses: paradedb/actions/.github/workflows/upstream-sync-rebase.yml@v10
     with:
       github_app_client_id: ${{ vars.PARADEDB_GITHUB_APP_CLIENT_ID }}
-      approvers: "philippemnoel,rebasedming,stuhood,mdashti"
+      approvers: pg_search-maintainers
       slack_alert_mention: "<!subteam^S0BLE20RYPM|@pg_search-maintainers>"
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
@@ -37,6 +37,10 @@ jobs:
 ```
 
 For manual promotion, call `.github/workflows/upstream-sync-promote.yml@v10`.
+
+Prefer an org team slug for `approvers` over a list of usernames. Both are
+accepted, but a hardcoded list silently drifts from the team it mirrors as
+people join and leave, and nothing surfaces the drift.
 
 ## Failure alerts
 
