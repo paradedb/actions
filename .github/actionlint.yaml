@@ -1,0 +1,7 @@
+paths:
+  .github/workflows/**/*.{yml,yaml}:
+    ignore:
+      # The organization-wide GitHub App credential migration uses client IDs. Keep
+      # this known action metadata mismatch separate from structural workflow linting.
+      - 'missing input "app-id" which is required by action "actions/create-github-app-token@v3"'
+      - 'input "client-id" is not defined in action "actions/create-github-app-token@v3"'
