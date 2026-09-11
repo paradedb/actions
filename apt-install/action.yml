@@ -30,8 +30,8 @@ runs:
             delay=$((delay * 2))
           fi
 
-          if $sudo DEBIAN_FRONTEND=noninteractive apt-get update && \
-             $sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+          if $sudo env DEBIAN_FRONTEND=noninteractive apt-get update && \
+             $sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y \
                -o Acquire::Retries=3 \
                ${{ inputs.packages }}; then
             break
