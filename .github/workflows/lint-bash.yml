@@ -10,15 +10,15 @@ on:
     branches:
       - main
     paths:
+      - "**/*.sh"
       - ".github/workflows/lint-bash.yml"
       - "lint-bash/**"
-      - "**/*.sh"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
+      - "**/*.sh"
       - ".github/workflows/lint-bash.yml"
       - "lint-bash/**"
-      - "**/*.sh"
   workflow_dispatch:
 
 concurrency:
