@@ -41,16 +41,15 @@ These lint and check actions are introduced in `v12`. Merge the shared-action PR
 and publish `v12` before merging consumer PRs. Future shared changes use the same
 repository-wide release tags; consumers update their action version as needed.
 
-Prettier 3.9.6 and markdownlint-cli 0.49.1, including their transitive dependencies,
-are locked in `lint-prettier/package-lock.json` and installed with `npm ci`.
+Prettier 3.9.6 and markdownlint-cli 0.49.1 are pinned directly in the action's
+install step. No package manifest or lockfile is needed for the shared linters.
 The caller's Prettier and markdownlint configuration is used. Set
 `prettier-source: pnpm` to install the caller's frozen lockfile with scripts
 disabled and run its own Prettier (including plugins). Its `packageManager` field
 selects pnpm. Markdown lint always ignores `node_modules` at any depth.
 
-To update shared Node linters, change their exact versions in
-`lint-prettier/package.json`, regenerate the lockfile, and run the tests and lint
-checks. Keep local pre-commit versions aligned with these versions. Python linters
+To update shared Node linters, change their exact versions in the install step in
+`lint-prettier/action.yml` and run the tests and lint checks. Keep local pre-commit versions aligned with these versions. Python linters
 are installed in isolated environments: codespell 2.4.3, Beautysh 6.4.3, and
 ShellCheck 0.11.0.1. The optional shfmt formatter uses 3.13.1.
 
@@ -68,7 +67,8 @@ codespell CLI replaces the former Docker wrapper, so Docker Hub credentials are
 no longer needed by this check.
 
 Tests: `python3 -m unittest discover -s tests`, then
-`npm ci --ignore-scripts --prefix lint-prettier` and
+run the pinned install command from `lint-prettier/action.yml` with
+`GITHUB_ACTION_PATH` set to the absolute `lint-prettier` directory, followed by
 `node --test tests/lint-prettier.test.mjs`.
 
 ## License

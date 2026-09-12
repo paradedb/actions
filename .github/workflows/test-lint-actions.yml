@@ -22,8 +22,8 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Install Locked Lint Dependencies
-        run: npm ci --ignore-scripts --prefix lint-prettier
+      - name: Install and Run Shared Prettier
+        uses: ./lint-prettier
 
       - name: Test File and Shell Checks
         run: python3 -m unittest discover -s tests

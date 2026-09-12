@@ -1,5 +1,5 @@
 name: lint-prettier
-description: Check YAML or Markdown with locked Prettier and markdownlint dependencies.
+description: Check YAML or Markdown with pinned Prettier and markdownlint versions.
 inputs:
   patterns:
     description: Newline-separated Prettier file patterns.
@@ -27,9 +27,9 @@ runs:
       uses: actions/setup-node@v7
       with:
         node-version: "24"
-    - name: Install Locked Lint Dependencies
+    - name: Install Prettier and markdownlint
       shell: bash
-      run: npm ci --ignore-scripts --no-audit --no-fund --prefix "$GITHUB_ACTION_PATH"
+      run: npm install --ignore-scripts --no-audit --no-fund --no-save --package-lock=false --prefix "$GITHUB_ACTION_PATH" prettier@3.9.6 markdownlint-cli@0.49.1
     - name: Install Locked Repository Dependencies
       shell: bash
       run: pnpm install --frozen-lockfile --ignore-scripts
