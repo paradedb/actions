@@ -1,6 +1,6 @@
 # Check Typo
 
-Composite action to check spelling and filenames with codespell 2.4.3.
+Composite action to check spelling and filenames with codespell.
 
 ## Usage
 
@@ -9,7 +9,7 @@ Composite action to check spelling and filenames with codespell 2.4.3.
   uses: paradedb/actions/check-typo@v12
   with:
     ignore-words-file: .codespellignore
-    skip: Cargo.lock,./tests
+    skip: Cargo.lock,./tests # Replace with the files and directories you want to skip
 ```
 
 Inputs:
