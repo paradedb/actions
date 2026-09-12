@@ -1,5 +1,6 @@
 name: lint-docker
 description: Lint Dockerfiles using Hadolint.
+
 inputs:
   directory:
     description: Directory containing Dockerfiles.
@@ -13,19 +14,21 @@ inputs:
     description: Hadolint configuration file.
     required: false
     default: .hadolint.yaml
+
 runs:
   using: composite
   steps:
     - name: Find Dockerfiles
-      shell: bash
-      run: echo "files=$(find "$DIRECTORY" -type f -name 'Dockerfile*' ! -path "$EXCLUDE" -print | sort | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
       id: dockerfiles
+      shell: bash
       env:
         DIRECTORY: ${{ inputs.directory }}
         EXCLUDE: ${{ inputs.exclude }}
+      run: echo "files=$(find "$DIRECTORY" -type f -name 'Dockerfile*' ! -path "$EXCLUDE" -print | sort | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+
     - name: Run Hadolint
-      uses: jbergstroem/hadolint-gh-action@v1
       if: steps.dockerfiles.outputs.files != ''
+      uses: jbergstroem/hadolint-gh-action@v1
       with:
         dockerfile: ${{ steps.dockerfiles.outputs.files }}
         config_file: ${{ inputs.config }}

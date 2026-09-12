@@ -2,5 +2,5 @@
 .vscode/
 *.swp
 
-# Shared Node lint dependencies
+# Node
 node_modules/

@@ -1,6 +1,6 @@
 # Lint Bash
 
-Composite action to check tracked shell scripts for formatting, shebangs, strict mode, and ShellCheck errors. Run after checkout on Linux.
+Composite action to check tracked shell scripts for formatting, shebangs, strict mode, and ShellCheck errors.
 
 ## Usage
 

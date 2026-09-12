@@ -1,6 +1,6 @@
 # Lint Docker
 
-Composite action to lint Dockerfiles with Hadolint. Run after checkout on Linux.
+Composite action to lint Dockerfiles with Hadolint.
 
 ## Usage
 

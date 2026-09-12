@@ -1,6 +1,6 @@
 # Lint Prettier
 
-Composite action to check YAML or Markdown formatting with Prettier, with optional markdownlint checks. Run after checkout on Linux.
+Composite action to check YAML or Markdown formatting with Prettier, with optional markdownlint checks.
 
 ## Usage
 

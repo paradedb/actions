@@ -1,5 +1,6 @@
 name: lint-bash
 description: Check tracked shell scripts for formatting, shebangs, strict mode, and ShellCheck errors.
+
 inputs:
   formatter:
     description: "Shell formatter: beautysh or shfmt."
@@ -17,6 +18,7 @@ inputs:
     description: ShellCheck source search path.
     required: false
     default: scripts
+
 runs:
   using: composite
   steps:
@@ -24,12 +26,15 @@ runs:
       uses: actions/setup-python@v7
       with:
         python-version: "3.14"
+
     - name: Install Shell Linters
       shell: bash
       run: |-
         python -m venv "$RUNNER_TEMP/paradedb-shell-lint"
         "$RUNNER_TEMP/paradedb-shell-lint/bin/pip" install beautysh==6.4.3 shellcheck-py==0.11.0.1
+
     - name: Install shfmt
+      if: inputs.formatter == 'shfmt'
       shell: bash
       run: |-
         case "$(uname -m)" in
@@ -41,9 +46,11 @@ runs:
           "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_${arch}" \
           --output "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
         chmod +x "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
-      if: inputs.formatter == 'shfmt'
+
     - name: Check Shell Formatting
       shell: bash
+      env:
+        SHELL_FORMATTER: ${{ inputs.formatter }}
       run: |
         case "$SHELL_FORMATTER" in
           beautysh) args=(--indent-size 2 --check --) ;;
@@ -57,10 +64,12 @@ runs:
           "$RUNNER_TEMP/paradedb-shell-lint/bin/$SHELL_FORMATTER" "${args[@]}" "./$file" || failed=1
         done < <(git ls-files -z '*.sh')
         exit "$failed"
-      env:
-        SHELL_FORMATTER: ${{ inputs.formatter }}
+
     - name: Check Shebangs and Strict Mode
       shell: bash
+      env:
+        ALLOW_SH: ${{ inputs.allow-sh }}
+        STRICT_MODE_EXCLUDE: ${{ inputs.strict-mode-exclude }}
       run: |
         failed=0
         while IFS= read -r -d '' file; do
@@ -80,16 +89,14 @@ runs:
           fi
         done < <(git ls-files -z '*.sh')
         exit "$failed"
-      env:
-        ALLOW_SH: ${{ inputs.allow-sh }}
-        STRICT_MODE_EXCLUDE: ${{ inputs.strict-mode-exclude }}
+
     - name: Run ShellCheck
       shell: bash
+      env:
+        SOURCE_PATH: ${{ inputs.source-path }}
       run: |
         failed=0
         while IFS= read -r -d '' file; do
           "$RUNNER_TEMP/paradedb-shell-lint/bin/shellcheck" -x -P "$SOURCE_PATH" -- "./$file" || failed=1
         done < <(git ls-files -z '*.sh')
         exit "$failed"
-      env:
-        SOURCE_PATH: ${{ inputs.source-path }}

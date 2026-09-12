@@ -1,6 +1,6 @@
 # Check Typo
 
-Composite action to check spelling and filenames with codespell 2.4.3. Run after checkout on Linux.
+Composite action to check spelling and filenames with codespell 2.4.3.
 
 ## Usage
 

@@ -1,9 +1,11 @@
 name: lint-actions
 description: Validate GitHub Actions workflows with pinned actionlint.
+
 runs:
   using: composite
   steps:
     - name: Install actionlint
+      shell: bash
       env:
         ACTIONLINT_VERSION: 1.7.12
         ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
@@ -14,7 +16,7 @@ runs:
           "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
         echo "$ACTIONLINT_SHA256  $archive_path" | sha256sum --check
         tar --extract --gzip --file "$archive_path" --directory "$RUNNER_TEMP" actionlint
-      shell: bash
+
     - name: Lint workflows
-      run: '"$RUNNER_TEMP/actionlint" -color'
       shell: bash
+      run: '"$RUNNER_TEMP/actionlint" -color'

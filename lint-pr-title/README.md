@@ -1,6 +1,6 @@
 # Lint PR Title
 
-Composite action to validate conventional pull request titles. Use in a pull request workflow; no checkout is needed.
+Composite action to validate conventional pull request titles.
 
 ## Usage
 

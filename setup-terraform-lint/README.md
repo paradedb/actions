@@ -1,6 +1,6 @@
 # Set Up Terraform Linters
 
-Composite action to install Terraform 1.15.9 and TFLint 0.64.0. Run after checkout on Linux.
+Composite action to install Terraform 1.15.9 and TFLint 0.64.0.
 
 ## Usage
 

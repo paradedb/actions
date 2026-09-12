@@ -1,5 +1,6 @@
 name: setup-terraform-lint
 description: Install the shared Terraform and TFLint versions.
+
 runs:
   using: composite
   steps:
@@ -7,6 +8,7 @@ runs:
       uses: hashicorp/setup-terraform@v4
       with:
         terraform_version: 1.15.9
+
     - name: Set Up TFLint
       uses: terraform-linters/setup-tflint@v6
       with:

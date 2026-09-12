@@ -1,6 +1,6 @@
 # Lint Format
 
-Composite action to check tracked files for CRLF endings, trailing whitespace, and missing final newlines, with optional JSON validation. Run after checkout on Linux with Python 3 available.
+Composite action to check tracked files for CRLF endings, trailing whitespace, and missing final newlines, with optional JSON validation.
 
 ## Usage
 

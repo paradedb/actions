@@ -1,9 +1,11 @@
 name: lint-pr-title
 description: Validate conventional pull request titles.
+
 inputs:
   github-token:
     description: "Token with pull-requests: read permission."
     required: true
+
 runs:
   using: composite
   steps:
