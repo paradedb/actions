@@ -1,0 +1,35 @@
+name: Test Lint Actions
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test Shared Linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v7
+
+      - name: Set Up NodeJS Environment
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Install Locked Lint Dependencies
+        run: npm ci --ignore-scripts --prefix lint-prettier
+
+      - name: Test File and Shell Checks
+        run: python3 -m unittest discover -s tests
+
+      - name: Test Prettier and Markdown Lint
+        run: node --test tests/lint-prettier.test.mjs
+
+      - name: Lint GitHub Actions
+        uses: ./lint-actions

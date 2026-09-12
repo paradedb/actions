@@ -1,0 +1,13 @@
+name: lint-pr-title
+description: Validate conventional pull request titles.
+inputs:
+  github-token:
+    description: "Token with pull-requests: read permission."
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Validate PR Title Format
+      uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}

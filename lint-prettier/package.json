@@ -1,0 +1,8 @@
+{
+  "name": "paradedb-shared-lint",
+  "private": true,
+  "dependencies": {
+    "prettier": "3.9.6",
+    "markdownlint-cli": "0.49.1"
+  }
+}

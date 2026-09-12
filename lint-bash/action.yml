@@ -1,0 +1,52 @@
+name: lint-bash
+description: Check tracked shell scripts for formatting, shebangs, strict mode, and ShellCheck errors.
+inputs:
+  formatter:
+    description: "Shell formatter: beautysh or shfmt."
+    required: false
+    default: beautysh
+  allow-sh:
+    description: Allow a /bin/sh shebang in addition to Bash.
+    required: false
+    default: "false"
+  strict-mode-exclude:
+    description: Newline-separated tracked paths exempt from the strict-mode check.
+    required: false
+    default: ""
+  source-path:
+    description: ShellCheck source search path.
+    required: false
+    default: scripts
+runs:
+  using: composite
+  steps:
+    - name: Set Up Python Environment
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: "3.14"
+    - name: Install Shell Linters
+      shell: bash
+      run: |-
+        python -m venv "$RUNNER_TEMP/paradedb-shell-lint"
+        "$RUNNER_TEMP/paradedb-shell-lint/bin/pip" install beautysh==6.4.3 shellcheck-py==0.11.0.1
+    - name: Install shfmt
+      shell: bash
+      run: |-
+        case "$(uname -m)" in
+          x86_64) arch=amd64 ;;
+          aarch64) arch=arm64 ;;
+          *) echo "Unsupported runner architecture"; exit 1 ;;
+        esac
+        curl --fail --silent --show-error --location \
+          "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_${arch}" \
+          --output "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
+        chmod +x "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
+      if: inputs.formatter == 'shfmt'
+    - name: Check Shell Scripts
+      shell: bash
+      run: '"$RUNNER_TEMP/paradedb-shell-lint/bin/python" "$GITHUB_ACTION_PATH/check.py"'
+      env:
+        SHELL_FORMATTER: ${{ inputs.formatter }}
+        ALLOW_SH: ${{ inputs.allow-sh }}
+        STRICT_MODE_EXCLUDE: ${{ inputs.strict-mode-exclude }}
+        SOURCE_PATH: ${{ inputs.source-path }}

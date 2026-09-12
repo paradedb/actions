@@ -53,9 +53,11 @@ jobs:
         id: config
         run: |
           source scripts/sync-upstream.sh
-          echo "upstream_repo_url=${UPSTREAM_REPO_URL:-}" >> "$GITHUB_OUTPUT"
-          echo "upstream_branch=${UPSTREAM_BRANCH:-main}" >> "$GITHUB_OUTPUT"
-          echo "target_branch=${TARGET_BRANCH:-main}" >> "$GITHUB_OUTPUT"
+          {
+            echo "upstream_repo_url=${UPSTREAM_REPO_URL:-}"
+            echo "upstream_branch=${UPSTREAM_BRANCH:-main}"
+            echo "target_branch=${TARGET_BRANCH:-main}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Manual Approval Before Promotion
         uses: trstringer/manual-approval@v1
