@@ -31,10 +31,15 @@ def check():
             print("Missing strict mode:", file)
             failed = True
         args = ["--indent-size", "2", "--check", "--"] if formatter == "beautysh" else ["-d", "-i", "2", "-ci", "--"]
-        commands = [
-            [str(tools / formatter), *args, "./" + file],
-            [str(tools / "shellcheck"), "-x", "-P", os.environ.get("SOURCE_PATH", "scripts"), "--", "./" + file],
-        ]
+        # Match the existing Bash **/*.sh formatter glob, which omits hidden
+        # directories. Shebang, strict-mode, and ShellCheck still cover them.
+        commands = []
+        if not any(part.startswith(".") for part in Path(file).parts):
+            commands.append([str(tools / formatter), *args, "./" + file])
+        commands.append([
+            str(tools / "shellcheck"), "-x", "-P",
+            os.environ.get("SOURCE_PATH", "scripts"), "--", "./" + file,
+        ])
         for command in commands:
             if subprocess.run(command, check=False).returncode:
                 failed = True

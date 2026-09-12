@@ -89,13 +89,20 @@ class CheckTests(unittest.TestCase):
             result = BASH.check()
         return result, calls
 
-    def test_shell_metacharacters_and_hidden_directories(self):
-        name = ".github/a file; echo injected.sh"
+    def test_shell_metacharacters(self):
+        name = "scripts/a file; echo injected.sh"
         self.track(name, b"#!/usr/bin/env bash\nset -euo pipefail\n")
         result, calls = self.run_bash()
         self.assertEqual(result, 0)
         self.assertEqual(len(calls), 2)
         self.assertTrue(all(command[-1] == "./" + name for command in calls))
+
+    def test_hidden_scripts_keep_existing_formatter_scope(self):
+        self.track(".github/hidden.sh", b"#!/bin/bash\nset -euo pipefail\n")
+        result, calls = self.run_bash()
+        self.assertEqual(result, 0)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(Path(calls[0][0]).name, "shellcheck")
 
     def test_shebang_and_strict_mode_exceptions(self):
         self.track("bootstrap.sh", b"#!/bin/sh\necho hello\n")

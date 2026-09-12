@@ -58,6 +58,8 @@ File-format checks inspect tracked files and preserve Git pathspec semantics.
 Exclusions only affect whitespace and final newlines; CRLF and optional JSON
 validation cover all tracked files. Bash checks inspect tracked `*.sh` files,
 including hidden directories, and handle spaces and shell metacharacters in paths.
+Formatting retains the existing `**/*.sh` glob scope and skips hidden paths;
+shebang, strict-mode, and ShellCheck checks still cover tracked hidden scripts.
 The strict-mode annotation `# @paradedb-skip-check-pipefail` is supported.
 
 Spelling configuration stays in each repository. Empty spelling inputs do not
