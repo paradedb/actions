@@ -1,6 +1,6 @@
 # Lint GitHub Actions
 
-Composite action to validate GitHub Actions workflows with actionlint 1.7.12.
+Composite action to validate GitHub Actions workflows with actionlint.
 
 ## Usage
 
