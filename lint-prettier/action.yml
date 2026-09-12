@@ -34,11 +34,34 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile --ignore-scripts
       if: inputs.prettier-source == 'pnpm'
-    - name: Run Linters
+    - name: Run Markdown Lint
+      if: inputs.markdown == 'true'
       shell: bash
-      run: node "$GITHUB_ACTION_PATH/lint.mjs"
+      run: '"$GITHUB_ACTION_PATH/node_modules/.bin/markdownlint" "**/*.md" --ignore "**/node_modules/**"'
+    - name: Run Prettier
+      shell: bash
+      run: |
+        patterns=()
+        while IFS= read -r pattern; do
+          pattern="${pattern%$'\r'}"
+          if [[ -n "$pattern" ]]; then
+            patterns+=("$pattern")
+          fi
+        done <<< "$LINT_PATTERNS"
+        if [[ ${#patterns[@]} -eq 0 ]]; then
+          echo "At least one Prettier pattern is required"
+          exit 1
+        fi
+        args=(--check "${patterns[@]}")
+        if [[ -n "$PRETTIER_IGNORE_PATH" ]]; then
+          args+=(--ignore-path "$PRETTIER_IGNORE_PATH")
+        fi
+        case "$PRETTIER_SOURCE" in
+          shared) "$GITHUB_ACTION_PATH/node_modules/.bin/prettier" "${args[@]}" ;;
+          pnpm) pnpm exec prettier "${args[@]}" ;;
+          *) echo "prettier-source must be shared or pnpm"; exit 1 ;;
+        esac
       env:
         LINT_PATTERNS: ${{ inputs.patterns }}
-        LINT_MARKDOWN: ${{ inputs.markdown }}
         PRETTIER_SOURCE: ${{ inputs.prettier-source }}
         PRETTIER_IGNORE_PATH: ${{ inputs.ignore-path }}

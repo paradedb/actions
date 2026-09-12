@@ -49,7 +49,7 @@ disabled and run its own Prettier (including plugins). Its `packageManager` fiel
 selects pnpm. Markdown lint always ignores `node_modules` at any depth.
 
 To update shared Node linters, change their exact versions in the install step in
-`lint-prettier/action.yml` and run the tests and lint checks. Keep local pre-commit versions aligned with these versions. Python linters
+`lint-prettier/action.yml` and run the lint checks. Keep local pre-commit versions aligned with these versions. Python linters
 are installed in isolated environments: codespell 2.4.3, Beautysh 6.4.3, and
 ShellCheck 0.11.0.1. The optional shfmt formatter uses 3.13.1.
 
@@ -65,11 +65,6 @@ Spelling configuration stays in each repository. Empty spelling inputs do not
 override settings in `.codespellrc`, `setup.cfg`, or `pyproject.toml`. The Python
 codespell CLI replaces the former Docker wrapper, so Docker Hub credentials are
 no longer needed by this check.
-
-Tests: `python3 -m unittest discover -s tests`, then
-run the pinned install command from `lint-prettier/action.yml` with
-`GITHUB_ACTION_PATH` set to the absolute `lint-prettier` directory, followed by
-`node --test tests/lint-prettier.test.mjs`.
 
 ## License
 
