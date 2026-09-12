@@ -14,12 +14,6 @@ jobs:
     steps:
       - name: Validate PR Title
         uses: paradedb/actions/lint-pr-title@v12
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
-
-Inputs:
-
-- `github-token`: Required token with `pull-requests: read` permission.
 
 Include `edited` in the calling workflow's pull request event types so title changes rerun the check.
