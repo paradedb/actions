@@ -12,7 +12,6 @@ Shared GitHub Actions building blocks for ParadeDB repositories.
 - [lint-format](lint-format/) -- Composite action to check file endings, whitespace, and JSON validity.
 - [lint-pr-title](lint-pr-title/) -- Composite action to validate pull request titles.
 - [lint-prettier](lint-prettier/) -- Composite action to lint YAML and Markdown with Prettier and markdownlint.
-- [setup-terraform-lint](setup-terraform-lint/) -- Composite action to install Terraform and TFLint.
 - [slack-alert](slack-alert/) -- Composite action for Slack failure alerts.
 - [upstream-sync](upstream-sync/) -- Reusable workflows for keeping a target repository rebased on an upstream repository.
 

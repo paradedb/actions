@@ -18,4 +18,4 @@ Inputs:
 - `ignore-words-file`: Optional file of ignored words.
 - `skip`: Optional comma-separated codespell exclusion patterns.
 
-Each repository owns its spelling configuration and `.codespellignore`. Empty inputs preserve the repository's codespell defaults and configuration. This action runs the Python CLI and does not require Docker Hub credentials.
+Each repository owns its spelling configuration and `.codespellignore`. Empty inputs preserve the repository's codespell defaults and configuration.
