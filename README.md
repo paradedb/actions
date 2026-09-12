@@ -30,16 +30,16 @@ Example steps after checkout:
 
 ```yaml
 - name: Lint Markdown
-  uses: paradedb/actions/lint-prettier@<commit-sha>
+  uses: paradedb/actions/lint-prettier@v12
   with:
     patterns: "{**/*.md,**/*.mdx}"
     markdown: "true"
 ```
 
-Pin consumers to a reviewed commit or published release tag. Merge shared changes
-before consumer PRs. For testing a new action, consumers may reference its exact
-PR commit; this also avoids relying on an unpublished release tag. Shared fixes
-and version bumps are implemented here, then consumers update their action ref.
+Use published release tags for shared actions, matching the existing components.
+These lint and check actions are introduced in `v12`. Merge the shared-action PR
+and publish `v12` before merging consumer PRs. Future shared changes use the same
+repository-wide release tags; consumers update their action version as needed.
 
 Prettier 3.9.6 and markdownlint-cli 0.49.1, including their transitive dependencies,
 are locked in `lint-prettier/package-lock.json` and installed with `npm ci`.
