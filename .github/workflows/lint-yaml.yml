@@ -10,17 +10,17 @@ on:
     branches:
       - main
     paths:
-      - "lint-prettier/**"
-      - "**/*.yml"
-      - "**/*.yaml"
       - ".github/workflows/lint-yaml.yml"
+      - "lint-prettier/**"
+      - "**/*.yaml"
+      - "**/*.yml"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - "lint-prettier/**"
-      - "**/*.yml"
-      - "**/*.yaml"
       - ".github/workflows/lint-yaml.yml"
+      - "lint-prettier/**"
+      - "**/*.yaml"
+      - "**/*.yml"
   workflow_dispatch:
 
 concurrency:
