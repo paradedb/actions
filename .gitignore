@@ -4,4 +4,3 @@
 
 # Shared Node lint dependencies
 node_modules/
-__pycache__/
