@@ -42,11 +42,54 @@ runs:
           --output "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
         chmod +x "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
       if: inputs.formatter == 'shfmt'
-    - name: Check Shell Scripts
+    - name: Check Shell Formatting
       shell: bash
-      run: '"$RUNNER_TEMP/paradedb-shell-lint/bin/python" "$GITHUB_ACTION_PATH/check.py"'
+      run: |
+        case "$SHELL_FORMATTER" in
+          beautysh) args=(--indent-size 2 --check --) ;;
+          shfmt) args=(-d -i 2 -ci --) ;;
+          *) echo "formatter must be beautysh or shfmt"; exit 1 ;;
+        esac
+        failed=0
+        while IFS= read -r -d '' file; do
+          # Match the existing **/*.sh formatter glob, which skips hidden paths.
+          case "/$file" in */.*) continue ;; esac
+          "$RUNNER_TEMP/paradedb-shell-lint/bin/$SHELL_FORMATTER" "${args[@]}" "./$file" || failed=1
+        done < <(git ls-files -z '*.sh')
+        exit "$failed"
       env:
         SHELL_FORMATTER: ${{ inputs.formatter }}
+    - name: Check Shebangs and Strict Mode
+      shell: bash
+      run: |
+        failed=0
+        while IFS= read -r -d '' file; do
+          shebang="$(head -n 1 -- "$file")"
+          if [[ "$shebang" != '#!/bin/bash' && "$shebang" != '#!/usr/bin/env bash' ]]; then
+            if [[ "$ALLOW_SH" != true || "$shebang" != '#!/bin/sh' ]]; then
+              echo "Missing supported shebang: $file"
+              failed=1
+            fi
+          fi
+          if grep -Fxq -- "$file" <<< "$STRICT_MODE_EXCLUDE"; then
+            continue
+          fi
+          if ! grep -Eq '^[[:blank:]]*set -E?euo pipefail$|^# @paradedb-skip-check-pipefail$' -- "$file"; then
+            echo "Missing strict mode: $file"
+            failed=1
+          fi
+        done < <(git ls-files -z '*.sh')
+        exit "$failed"
+      env:
         ALLOW_SH: ${{ inputs.allow-sh }}
         STRICT_MODE_EXCLUDE: ${{ inputs.strict-mode-exclude }}
+    - name: Run ShellCheck
+      shell: bash
+      run: |
+        failed=0
+        while IFS= read -r -d '' file; do
+          "$RUNNER_TEMP/paradedb-shell-lint/bin/shellcheck" -x -P "$SOURCE_PATH" -- "./$file" || failed=1
+        done < <(git ls-files -z '*.sh')
+        exit "$failed"
+      env:
         SOURCE_PATH: ${{ inputs.source-path }}
