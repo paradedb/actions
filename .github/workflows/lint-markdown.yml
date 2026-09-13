@@ -13,14 +13,14 @@ on:
       - "**/*.md"
       - "**/*.mdx"
       - ".github/workflows/lint-markdown.yml"
-      - "lint-prettier/**"
+      - "lint-markdown/**"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - "**/*.md"
       - "**/*.mdx"
       - ".github/workflows/lint-markdown.yml"
-      - "lint-prettier/**"
+      - "lint-markdown/**"
   workflow_dispatch:
 
 concurrency:
@@ -40,8 +40,6 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Lint Markdown
-        uses: ./lint-prettier
+        uses: ./lint-markdown
         with:
-          patterns: "{**/*.md,**/*.mdx}"
-          markdown: "true"
           ignore-path: .prettierignore

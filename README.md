@@ -10,8 +10,9 @@ Shared GitHub Actions building blocks for ParadeDB repositories.
 - [lint-bash](lint-bash/) -- Composite action to format and lint Bash scripts.
 - [lint-docker](lint-docker/) -- Composite action to lint Dockerfiles with Hadolint.
 - [lint-format](lint-format/) -- Composite action to check file endings, whitespace, and JSON validity.
+- [lint-markdown](lint-markdown/) -- Composite action to lint Markdown with markdownlint and Prettier.
 - [lint-pr-title](lint-pr-title/) -- Composite action to validate pull request titles.
-- [lint-prettier](lint-prettier/) -- Composite action to lint YAML and Markdown with Prettier and markdownlint.
+- [lint-yaml](lint-yaml/) -- Composite action to lint YAML with Prettier.
 - [slack-alert](slack-alert/) -- Composite action for Slack failure alerts.
 - [upstream-sync](upstream-sync/) -- Reusable workflows for keeping a target repository rebased on an upstream repository.
 

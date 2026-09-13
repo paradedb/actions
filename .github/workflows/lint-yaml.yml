@@ -13,14 +13,14 @@ on:
       - "**/*.yaml"
       - "**/*.yml"
       - ".github/workflows/lint-yaml.yml"
-      - "lint-prettier/**"
+      - "lint-yaml/**"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - "**/*.yaml"
       - "**/*.yml"
       - ".github/workflows/lint-yaml.yml"
-      - "lint-prettier/**"
+      - "lint-yaml/**"
   workflow_dispatch:
 
 concurrency:
@@ -39,7 +39,7 @@ jobs:
       - name: Checkout Git Repository
         uses: actions/checkout@v7
 
-      - name: Lint Yaml
-        uses: ./lint-prettier
+      - name: Lint YAML
+        uses: ./lint-yaml
         with:
           ignore-path: .prettierignore
