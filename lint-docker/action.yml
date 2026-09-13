@@ -9,7 +9,7 @@ inputs:
   exclude:
     description: Dockerfile path to exclude.
     required: false
-    default: docker/Dockerfile.template
+    default: ""
   config:
     description: Hadolint configuration file.
     required: false

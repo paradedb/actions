@@ -12,7 +12,7 @@ Composite action to lint Dockerfiles with Hadolint.
 Inputs:
 
 - `directory`: Directory to search for `Dockerfile*` files (default `docker`).
-- `exclude`: Path to exclude (default `docker/Dockerfile.template`).
+- `exclude`: Optional path to exclude. No files are excluded by default.
 - `config`: Repository-owned Hadolint configuration (default `.hadolint.yaml`).
 
-Hadolint treats informational findings as errors. If no Dockerfiles match, the lint step is skipped. Keep Dockerfile generation and template-consistency checks in the calling workflow.
+Hadolint treats informational findings as errors. If no Dockerfiles match, the lint step is skipped.
