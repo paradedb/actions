@@ -2,10 +2,6 @@ name: lint-bash
 description: Check tracked shell scripts for formatting, shebangs, strict mode, and ShellCheck errors.
 
 inputs:
-  formatter:
-    description: "Shell formatter: beautysh or shfmt."
-    required: false
-    default: beautysh
   allow-sh:
     description: Allow a /bin/sh shebang in addition to Bash.
     required: false
@@ -27,14 +23,13 @@ runs:
       with:
         python-version: "3.14"
 
-    - name: Install Shell Linters
+    - name: Install ShellCheck
       shell: bash
       run: |-
         python -m venv "$RUNNER_TEMP/paradedb-shell-lint"
-        "$RUNNER_TEMP/paradedb-shell-lint/bin/pip" install beautysh==6.4.3 shellcheck-py==0.11.0.1
+        "$RUNNER_TEMP/paradedb-shell-lint/bin/pip" install shellcheck-py==0.11.0.1
 
     - name: Install shfmt
-      if: inputs.formatter == 'shfmt'
       shell: bash
       run: |-
         case "$(uname -m)" in
@@ -49,19 +44,10 @@ runs:
 
     - name: Check Shell Formatting
       shell: bash
-      env:
-        SHELL_FORMATTER: ${{ inputs.formatter }}
       run: |
-        case "$SHELL_FORMATTER" in
-          beautysh) args=(--indent-size 2 --check --) ;;
-          shfmt) args=(-d -i 2 -ci --) ;;
-          *) echo "formatter must be beautysh or shfmt"; exit 1 ;;
-        esac
         failed=0
         while IFS= read -r -d '' file; do
-          # Match the existing **/*.sh formatter glob, which skips hidden paths.
-          case "/$file" in */.*) continue ;; esac
-          "$RUNNER_TEMP/paradedb-shell-lint/bin/$SHELL_FORMATTER" "${args[@]}" "./$file" || failed=1
+          "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt" -d -i 2 -ci -- "./$file" || failed=1
         done < <(git ls-files -z '*.sh')
         exit "$failed"
 

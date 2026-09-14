@@ -39,5 +39,3 @@ jobs:
 
       - name: Lint Bash
         uses: ./lint-bash
-        with:
-          formatter: shfmt

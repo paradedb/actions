@@ -13,11 +13,8 @@ Composite action to check tracked shell scripts for formatting, shebangs, strict
 
 Inputs:
 
-- `formatter`: `beautysh` (default) or `shfmt`.
 - `allow-sh`: Allow `#!/bin/sh` alongside Bash shebangs (default `false`).
 - `strict-mode-exclude`: Newline-separated exact paths exempt from strict-mode checks.
 - `source-path`: ShellCheck source search path (default `scripts`).
 
-The action checks tracked `*.sh` files. Formatting skips hidden paths, matching the existing `**/*.sh` glob behavior; shebang, strict-mode, and ShellCheck checks include hidden scripts. Scripts may opt out of strict-mode checks with `# @paradedb-skip-check-pipefail`.
-
-Tool versions are pinned in the action: Beautysh 6.4.3, shellcheck-py 0.11.0.1, and optional shfmt 3.13.1. Keep repository pre-commit settings aligned with the chosen formatter.
+The action checks tracked `*.sh` files, including hidden scripts. Formatting uses shfmt with two-space indentation and indented case branches. Scripts may opt out of strict-mode checks with `# @paradedb-skip-check-pipefail`.
