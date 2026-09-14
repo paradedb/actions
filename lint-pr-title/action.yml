@@ -1,0 +1,10 @@
+name: lint-pr-title
+description: Validate conventional pull request titles.
+
+runs:
+  using: composite
+  steps:
+    - name: Validate PR Title Format
+      uses: amannn/action-semantic-pull-request@v6
+      env:
+        GITHUB_TOKEN: ${{ github.token }}

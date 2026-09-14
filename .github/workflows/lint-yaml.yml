@@ -10,15 +10,17 @@ on:
     branches:
       - main
     paths:
-      - "**/*.yml"
       - "**/*.yaml"
+      - "**/*.yml"
       - ".github/workflows/lint-yaml.yml"
+      - "lint-yaml/**"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - "**/*.yml"
       - "**/*.yaml"
+      - "**/*.yml"
       - ".github/workflows/lint-yaml.yml"
+      - "lint-yaml/**"
   workflow_dispatch:
 
 concurrency:
@@ -37,11 +39,7 @@ jobs:
       - name: Checkout Git Repository
         uses: actions/checkout@v7
 
-      - name: Set up NodeJS Environment
-        uses: actions/setup-node@v7
-
-      - name: Install Prettier
-        run: npm install -g prettier
-
-      - name: Check YAML Formatting
-        run: prettier --check "**/*.{yml,yaml}" --ignore-path .prettierignore
+      - name: Lint YAML
+        uses: ./lint-yaml
+        with:
+          ignore-path: .prettierignore

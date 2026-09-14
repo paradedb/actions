@@ -26,7 +26,7 @@ Add a caller workflow:
 ```yaml
 jobs:
   upstream-rebase:
-    uses: paradedb/actions/.github/workflows/upstream-sync-rebase.yml@v10
+    uses: paradedb/actions/.github/workflows/upstream-sync-rebase.yml@v12
     with:
       github_app_client_id: ${{ vars.PARADEDB_GITHUB_APP_CLIENT_ID }}
       approvers: pg_search-maintainers
@@ -36,7 +36,7 @@ jobs:
       PARADEDB_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
 ```
 
-For manual promotion, call `.github/workflows/upstream-sync-promote.yml@v10`.
+For manual promotion, call `.github/workflows/upstream-sync-promote.yml@v12`.
 
 Prefer an org team slug for `approvers` over a list of usernames. Both are
 accepted, but a hardcoded list silently drifts from the team it mirrors as

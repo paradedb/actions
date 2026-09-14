@@ -1,0 +1,35 @@
+name: lint-markdown
+description: Lint Markdown files using markdownlint and Prettier.
+
+inputs:
+  ignore-path:
+    description: Optional explicit Prettier ignore file; empty uses Prettier defaults.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set Up NodeJS Environment
+      uses: actions/setup-node@v7
+      with:
+        node-version: "24"
+
+    - name: Install Prettier and markdownlint
+      shell: bash
+      run: npm install --ignore-scripts --no-audit --no-fund --no-save --package-lock=false --prefix "$GITHUB_ACTION_PATH" prettier@3.9.6 markdownlint-cli@0.49.1
+
+    - name: Run Markdown Lint
+      shell: bash
+      run: '"$GITHUB_ACTION_PATH/node_modules/.bin/markdownlint" "**/*.md" --ignore "**/node_modules/**"'
+
+    - name: Run Prettier
+      shell: bash
+      env:
+        PRETTIER_IGNORE_PATH: ${{ inputs.ignore-path }}
+      run: |
+        args=(--check "{**/*.md,**/*.mdx}")
+        if [[ -n "$PRETTIER_IGNORE_PATH" ]]; then
+          args+=(--ignore-path "$PRETTIER_IGNORE_PATH")
+        fi
+        "$GITHUB_ACTION_PATH/node_modules/.bin/prettier" "${args[@]}"

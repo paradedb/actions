@@ -1,0 +1,64 @@
+name: lint-format
+description: Check tracked file endings, whitespace, and optionally JSON validity.
+
+inputs:
+  exclude:
+    description: Newline-separated Git pathspecs excluded from whitespace and final-newline checks.
+    required: false
+    default: ""
+  check-json:
+    description: Validate all tracked JSON files.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Check for CRLF Files
+      shell: bash
+      run: |
+        failed=0
+        while IFS= read -r -d '' entry; do
+          if [[ "${entry%%$'\t'*}" == *crlf* ]]; then
+            echo "Incorrect line endings: $entry"
+            failed=1
+          fi
+        done < <(git ls-files --eol -z)
+        exit "$failed"
+
+    - name: Check Whitespace and Final Newlines
+      shell: bash
+      env:
+        FORMAT_EXCLUDE: ${{ inputs.exclude }}
+      run: |
+        exclusions=()
+        while IFS= read -r pattern; do
+          if [[ -n "$pattern" ]]; then
+            exclusions+=(":(exclude)$pattern")
+          fi
+        done <<< "$FORMAT_EXCLUDE"
+        failed=0
+        while IFS= read -r -d '' file; do
+          echo "Trailing whitespace: $file"
+          failed=1
+        done < <(git grep -Ilz '[[:blank:]]$' -- "${exclusions[@]}")
+        while IFS= read -r -d '' file; do
+          if [[ -s "$file" && -n "$(tail -c1 -- "$file")" ]]; then
+            echo "Missing final newline: $file"
+            failed=1
+          fi
+        done < <(git grep -Ilz '.' -- "${exclusions[@]}")
+        exit "$failed"
+
+    - name: Check JSON Validity
+      if: inputs.check-json == 'true'
+      shell: bash
+      run: |
+        failed=0
+        while IFS= read -r -d '' file; do
+          if ! python3 -m json.tool "./$file" > /dev/null; then
+            echo "Invalid JSON: $file"
+            failed=1
+          fi
+        done < <(git ls-files -z '*.json')
+        exit "$failed"

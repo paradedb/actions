@@ -13,12 +13,14 @@ on:
       - "**/*.md"
       - "**/*.mdx"
       - ".github/workflows/lint-markdown.yml"
+      - "lint-markdown/**"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - "**/*.md"
       - "**/*.mdx"
       - ".github/workflows/lint-markdown.yml"
+      - "lint-markdown/**"
   workflow_dispatch:
 
 concurrency:
@@ -37,14 +39,7 @@ jobs:
       - name: Checkout Git Repository
         uses: actions/checkout@v7
 
-      - name: Set up NodeJS Environment
-        uses: actions/setup-node@v7
-
-      - name: Install Prettier and markdownlint
-        run: npm install -g prettier markdownlint-cli
-
-      - name: Run Markdown Lint
-        run: markdownlint "**/*.md"
-
-      - name: Run Prettier
-        run: prettier --check "{**/*.md,**/*.mdx}" --ignore-path .prettierignore
+      - name: Lint Markdown
+        uses: ./lint-markdown
+        with:
+          ignore-path: .prettierignore

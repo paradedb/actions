@@ -1,0 +1,82 @@
+name: lint-bash
+description: Check tracked shell scripts for formatting, shebangs, strict mode, and ShellCheck errors.
+
+inputs:
+  source-path:
+    description: ShellCheck source search path.
+    required: false
+    default: scripts
+
+runs:
+  using: composite
+  steps:
+    - name: Set Up Python Environment
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.14"
+
+    - name: Install ShellCheck
+      shell: bash
+      run: |-
+        python -m venv "$RUNNER_TEMP/paradedb-shell-lint"
+        "$RUNNER_TEMP/paradedb-shell-lint/bin/pip" install shellcheck-py==0.11.0.1
+
+    - name: Install shfmt
+      shell: bash
+      run: |-
+        case "$(uname -m)" in
+          x86_64) arch=amd64 ;;
+          aarch64) arch=arm64 ;;
+          *) echo "Unsupported runner architecture"; exit 1 ;;
+        esac
+        curl --fail --silent --show-error --location \
+          "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_${arch}" \
+          --output "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
+        chmod +x "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
+
+    - name: Check Shell Formatting
+      shell: bash
+      run: |
+        failed=0
+        while IFS= read -r -d '' file; do
+          "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt" -d -i 2 -ci -- "./$file" || failed=1
+        done < <(git ls-files -z '*.sh')
+        exit "$failed"
+
+    - name: Check Shebangs and Strict Mode
+      shell: bash
+      run: |
+        failed=0
+        while IFS= read -r -d '' file; do
+          shebang="$(head -n 1 -- "$file")"
+          case "$shebang" in
+            '#!/bin/bash' | '#!/usr/bin/env bash' | '#!/bin/sh') ;;
+            *)
+              echo "Missing supported shebang: $file"
+              failed=1
+              ;;
+          esac
+          # /bin/sh implementations may not support pipefail, so require set -eu
+          # for sh scripts and set -euo pipefail (optionally with -E) for Bash.
+          if [[ "$shebang" == '#!/bin/sh' ]]; then
+            strict_mode='^[[:blank:]]*set -eu$'
+          else
+            strict_mode='^[[:blank:]]*set -E?euo pipefail$'
+          fi
+          if ! grep -Eq "$strict_mode|^# @paradedb-skip-check-pipefail$" -- "$file"; then
+            echo "Missing strict mode: $file"
+            failed=1
+          fi
+        done < <(git ls-files -z '*.sh')
+        exit "$failed"
+
+    - name: Run ShellCheck
+      shell: bash
+      env:
+        SOURCE_PATH: ${{ inputs.source-path }}
+      run: |
+        failed=0
+        while IFS= read -r -d '' file; do
+          "$RUNNER_TEMP/paradedb-shell-lint/bin/shellcheck" -x -P "$SOURCE_PATH" -- "./$file" || failed=1
+        done < <(git ls-files -z '*.sh')
+        exit "$failed"

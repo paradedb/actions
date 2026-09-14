@@ -1,0 +1,43 @@
+name: check-typo
+description: Check spelling with a pinned codespell and caller-owned configuration.
+
+inputs:
+  config:
+    description: Optional codespell configuration file.
+    required: false
+    default: ""
+  ignore-words-file:
+    description: Optional file containing ignored words.
+    required: false
+    default: ""
+  skip:
+    description: Comma-separated codespell skip patterns; empty uses the caller configuration.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set Up Python Environment
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.14"
+
+    - name: Install codespell
+      shell: bash
+      run: |-
+        python -m venv "$RUNNER_TEMP/paradedb-codespell"
+        "$RUNNER_TEMP/paradedb-codespell/bin/pip" install codespell==2.4.3
+
+    - name: Check Spelling
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        IGNORE_WORDS: ${{ inputs.ignore-words-file }}
+        SKIP: ${{ inputs.skip }}
+      run: |-
+        args=(--check-filenames)
+        [[ -z "$CONFIG" ]] || args+=(--config "$CONFIG")
+        [[ -z "$IGNORE_WORDS" ]] || args+=(--ignore-words "$IGNORE_WORDS")
+        [[ -z "$SKIP" ]] || args+=(--skip "$SKIP")
+        "$RUNNER_TEMP/paradedb-codespell/bin/codespell" "${args[@]}"

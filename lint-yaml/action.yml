@@ -1,0 +1,31 @@
+name: lint-yaml
+description: Lint YAML files using Prettier.
+
+inputs:
+  ignore-path:
+    description: Optional explicit Prettier ignore file; empty uses Prettier defaults.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set Up NodeJS Environment
+      uses: actions/setup-node@v7
+      with:
+        node-version: "24"
+
+    - name: Install Prettier
+      shell: bash
+      run: npm install --ignore-scripts --no-audit --no-fund --no-save --package-lock=false --prefix "$GITHUB_ACTION_PATH" prettier@3.9.6
+
+    - name: Run Prettier
+      shell: bash
+      env:
+        PRETTIER_IGNORE_PATH: ${{ inputs.ignore-path }}
+      run: |
+        args=(--check "**/*.{yml,yaml}")
+        if [[ -n "$PRETTIER_IGNORE_PATH" ]]; then
+          args+=(--ignore-path "$PRETTIER_IGNORE_PATH")
+        fi
+        "$GITHUB_ACTION_PATH/node_modules/.bin/prettier" "${args[@]}"
