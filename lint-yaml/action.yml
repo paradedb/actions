@@ -2,10 +2,6 @@ name: lint-yaml
 description: Lint YAML files using Prettier.
 
 inputs:
-  prettier-source:
-    description: "Use shared dependencies or the caller pnpm lockfile: shared or pnpm."
-    required: false
-    default: shared
   ignore-path:
     description: Optional explicit Prettier ignore file; empty uses Prettier defaults.
     required: false
@@ -14,10 +10,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Set Up pnpm
-      if: inputs.prettier-source == 'pnpm'
-      uses: pnpm/action-setup@v6
-
     - name: Set Up NodeJS Environment
       uses: actions/setup-node@v7
       with:
@@ -27,23 +19,13 @@ runs:
       shell: bash
       run: npm install --ignore-scripts --no-audit --no-fund --no-save --package-lock=false --prefix "$GITHUB_ACTION_PATH" prettier@3.9.6
 
-    - name: Install Locked Repository Dependencies
-      if: inputs.prettier-source == 'pnpm'
-      shell: bash
-      run: pnpm install --frozen-lockfile --ignore-scripts
-
     - name: Run Prettier
       shell: bash
       env:
-        PRETTIER_SOURCE: ${{ inputs.prettier-source }}
         PRETTIER_IGNORE_PATH: ${{ inputs.ignore-path }}
       run: |
         args=(--check "**/*.{yml,yaml}")
         if [[ -n "$PRETTIER_IGNORE_PATH" ]]; then
           args+=(--ignore-path "$PRETTIER_IGNORE_PATH")
         fi
-        case "$PRETTIER_SOURCE" in
-          shared) "$GITHUB_ACTION_PATH/node_modules/.bin/prettier" "${args[@]}" ;;
-          pnpm) pnpm exec prettier "${args[@]}" ;;
-          *) echo "prettier-source must be shared or pnpm"; exit 1 ;;
-        esac
+        "$GITHUB_ACTION_PATH/node_modules/.bin/prettier" "${args[@]}"
