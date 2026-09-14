@@ -2,10 +2,6 @@ name: lint-bash
 description: Check tracked shell scripts for formatting, shebangs, strict mode, and ShellCheck errors.
 
 inputs:
-  allow-sh:
-    description: Allow a /bin/sh shebang in addition to Bash.
-    required: false
-    default: "false"
   strict-mode-exclude:
     description: Newline-separated tracked paths exempt from the strict-mode check.
     required: false
@@ -54,18 +50,18 @@ runs:
     - name: Check Shebangs and Strict Mode
       shell: bash
       env:
-        ALLOW_SH: ${{ inputs.allow-sh }}
         STRICT_MODE_EXCLUDE: ${{ inputs.strict-mode-exclude }}
       run: |
         failed=0
         while IFS= read -r -d '' file; do
           shebang="$(head -n 1 -- "$file")"
-          if [[ "$shebang" != '#!/bin/bash' && "$shebang" != '#!/usr/bin/env bash' ]]; then
-            if [[ "$ALLOW_SH" != true || "$shebang" != '#!/bin/sh' ]]; then
+          case "$shebang" in
+            '#!/bin/bash' | '#!/usr/bin/env bash' | '#!/bin/sh') ;;
+            *)
               echo "Missing supported shebang: $file"
               failed=1
-            fi
-          fi
+              ;;
+          esac
           if grep -Fxq -- "$file" <<< "$STRICT_MODE_EXCLUDE"; then
             continue
           fi

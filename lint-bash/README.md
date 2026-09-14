@@ -13,8 +13,7 @@ Composite action to check tracked shell scripts for formatting, shebangs, strict
 
 Inputs:
 
-- `allow-sh`: Allow `#!/bin/sh` alongside Bash shebangs (default `false`).
 - `strict-mode-exclude`: Newline-separated exact paths exempt from strict-mode checks.
 - `source-path`: ShellCheck source search path (default `scripts`).
 
-The action checks tracked `*.sh` files, including hidden scripts. Formatting uses shfmt with two-space indentation and indented case branches. Scripts may opt out of strict-mode checks with `# @paradedb-skip-check-pipefail`.
+The action checks tracked `*.sh` files, including hidden scripts. Accepted shebangs are `#!/bin/bash`, `#!/usr/bin/env bash`, and `#!/bin/sh`. Formatting uses shfmt with two-space indentation and indented case branches. Scripts may opt out of strict-mode checks with `# @paradedb-skip-check-pipefail`.
