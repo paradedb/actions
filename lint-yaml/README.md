@@ -13,4 +13,4 @@ Inputs:
 
 - `ignore-path`: Optional explicit Prettier ignore file; empty uses Prettier defaults.
 
-Each repository owns its Prettier configuration and ignore files, such as `.prettierrc` and `.prettierignore`. Linter versions are pinned directly in the install step.
+Each repository owns its Prettier configuration and ignore files, such as `.prettierrc` and `.prettierignore`.
