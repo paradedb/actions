@@ -2,10 +2,6 @@ name: lint-bash
 description: Check tracked shell scripts for formatting, shebangs, strict mode, and ShellCheck errors.
 
 inputs:
-  strict-mode-exclude:
-    description: Newline-separated tracked paths exempt from the strict-mode check.
-    required: false
-    default: ""
   source-path:
     description: ShellCheck source search path.
     required: false
@@ -49,8 +45,6 @@ runs:
 
     - name: Check Shebangs and Strict Mode
       shell: bash
-      env:
-        STRICT_MODE_EXCLUDE: ${{ inputs.strict-mode-exclude }}
       run: |
         failed=0
         while IFS= read -r -d '' file; do
@@ -62,10 +56,14 @@ runs:
               failed=1
               ;;
           esac
-          if grep -Fxq -- "$file" <<< "$STRICT_MODE_EXCLUDE"; then
-            continue
+          # /bin/sh implementations may not support pipefail, so require set -eu
+          # for sh scripts and set -euo pipefail (optionally with -E) for Bash.
+          if [[ "$shebang" == '#!/bin/sh' ]]; then
+            strict_mode='^[[:blank:]]*set -eu$'
+          else
+            strict_mode='^[[:blank:]]*set -E?euo pipefail$'
           fi
-          if ! grep -Eq '^[[:blank:]]*set -E?euo pipefail$|^# @paradedb-skip-check-pipefail$' -- "$file"; then
+          if ! grep -Eq "$strict_mode|^# @paradedb-skip-check-pipefail$" -- "$file"; then
             echo "Missing strict mode: $file"
             failed=1
           fi
