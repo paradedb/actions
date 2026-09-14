@@ -11,9 +11,6 @@ Composite action to lint Markdown with markdownlint and format Markdown and MDX 
 
 Inputs:
 
-- `prettier-source`: `shared` (default) or `pnpm`.
 - `ignore-path`: Optional explicit Prettier ignore file; empty uses Prettier defaults.
 
 Markdown lint ignores `node_modules` at every depth. Each repository owns its `.markdownlint.yaml`, Prettier configuration, and ignore files.
-
-For a pnpm repository, set `prettier-source: pnpm` to use its own Prettier and plugins. The repository's `packageManager` field selects pnpm, and its frozen lockfile is installed with scripts disabled.
