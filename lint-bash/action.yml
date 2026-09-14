@@ -30,7 +30,7 @@ runs:
           *) echo "Unsupported runner architecture"; exit 1 ;;
         esac
         curl --fail --silent --show-error --location \
-          "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_${arch}" \
+          "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_linux_${arch}" \
           --output "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
         chmod +x "$RUNNER_TEMP/paradedb-shell-lint/bin/shfmt"
 
