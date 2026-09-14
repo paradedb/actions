@@ -27,6 +27,7 @@ repos:
     rev: v3.8.1
     hooks:
       - id: prettier
+        additional_dependencies: ["prettier@3.9.6"]
 
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
