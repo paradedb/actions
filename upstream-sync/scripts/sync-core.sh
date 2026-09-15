@@ -361,7 +361,8 @@ do_promote() {
   fi
 
   fetch_branch "${TARGET_REMOTE}" "${TARGET_BRANCH}"
-  fetch_branch "${TARGET_REMOTE}" "$BRANCH_NAME" "+refs/heads/${BRANCH_NAME}:refs/heads/${BRANCH_NAME}"
+  # The patch branch may be checked out, so only update its remote-tracking ref.
+  fetch_branch "${TARGET_REMOTE}" "$BRANCH_NAME"
 
   echo "Polling CI status for branch: $BRANCH_NAME"
 
@@ -389,7 +390,8 @@ do_promote() {
 
   echo "Promoting '$BRANCH_NAME' to ${TARGET_BRANCH} branch..."
   fetch_branch "${TARGET_REMOTE}" "${TARGET_BRANCH}" # Fetch to ensure we have the latest lease
-  git push --force-with-lease "${TARGET_REMOTE}" "$BRANCH_NAME:${TARGET_BRANCH}"
+  git push --force-with-lease="refs/heads/${TARGET_BRANCH}:$(git rev-parse "${TARGET_REMOTE}/${TARGET_BRANCH}")" \
+    "${TARGET_REMOTE}" "refs/remotes/${TARGET_REMOTE}/${BRANCH_NAME}:refs/heads/${TARGET_BRANCH}"
   git push "${TARGET_REMOTE}" --delete "$BRANCH_NAME"
 }
 
