@@ -215,7 +215,10 @@ poll_ci_status() {
     local api_response
     api_response=$(gh api "repos/${TARGET_REPO}/commits/$commit_sha/check-runs" --paginate)
 
-    local ci_check_filter='.name != "Rebase Target on Upstream" and .name != "Promote Target Patch Branch to Main" and .name != "Upstream Rebase"'
+    # Reusable workflows prefix check names with caller jobs (e.g. "call-promote / ").
+    # Match the final job name so promotion never waits on its own check.
+    # shellcheck disable=SC2016 # $job_name is a jq variable, not a shell variable.
+    local ci_check_filter='(.name | split(" / ") | last) as $job_name | $job_name != "Rebase Target on Upstream" and $job_name != "Promote Target Patch Branch to Main" and $job_name != "Upstream Rebase"'
 
     local total_checks completed_checks success_checks failure_checks cancelled_checks pending_checks
     total_checks=$(echo "$api_response" | jq -r -s "[.[].check_runs[] | select($ci_check_filter)] | length")
