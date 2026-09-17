@@ -137,15 +137,13 @@ runs:
       run: |
         set -euo pipefail
         PG_CONFIG="/usr/lib/postgresql/${PG_VERSION}/bin/pg_config"
-        features_arg=()
-        if [ -n "${BUILD_FEATURES}" ]; then
-          features_arg=(--features "${BUILD_FEATURES}")
+        package_dir="$(mktemp -d "${RUNNER_TEMP}/pg_search-package.XXXXXX")"
+        args=(--package pg_search --profile "$BUILD_PROFILE" --pg-config "$PG_CONFIG" --out-dir "$package_dir")
+        if [ -n "$BUILD_FEATURES" ]; then
+          args+=(--features "$BUILD_FEATURES")
         fi
-        target_arg=()
-        target_dir="target/${BUILD_PROFILE}"
-        if [ -n "${BUILD_TARGET}" ]; then
-          target_arg=(--target "${BUILD_TARGET}")
-          target_dir="target/${BUILD_TARGET}/${BUILD_PROFILE}"
+        if [ -n "$BUILD_TARGET" ]; then
+          args+=(--target "$BUILD_TARGET")
         fi
         if [ -n "${TARGET_RUSTFLAGS}" ]; then
           if [ -z "${BUILD_TARGET}" ]; then
@@ -155,15 +153,7 @@ runs:
           var="CARGO_TARGET_$(echo "${BUILD_TARGET}" | tr '[:lower:]-' '[:upper:]_')_RUSTFLAGS"
           export "${var}=${TARGET_RUSTFLAGS}"
         fi
-        cargo pgrx package --package pg_search --profile "${BUILD_PROFILE}" \
-          --pg-config "${PG_CONFIG}" "${target_arg[@]}" "${features_arg[@]}"
-
-        # Cargo's dev profile writes to debug/.
-        if [ "${BUILD_PROFILE}" = dev ]; then
-          target_dir="${target_dir%/dev}/debug"
-        fi
-        target_dir="$target_dir/pg_search-pg${PG_VERSION}"
-        test -d "$target_dir"
+        cargo pgrx package "${args[@]}"
 
         # Stage the install tree the way the release .deb lays it out, so a
         # consumer can COPY artifacts/usr/ over a released image.
@@ -171,9 +161,9 @@ runs:
         libdir="${out}/usr/lib/postgresql/${PG_VERSION}/lib"
         extdir="${out}/usr/share/postgresql/${PG_VERSION}/extension"
         mkdir -p "$libdir" "$extdir"
-        find "$target_dir" -type f -name 'pg_search*.so'      -exec cp {} "$libdir/" \;
-        find "$target_dir" -type f -name 'pg_search*.control' -exec cp {} "$extdir/" \;
-        find "$target_dir" -type f -name 'pg_search*.sql'     -exec cp {} "$extdir/" \;
+        find "$package_dir" -type f -name 'pg_search*.so'      -exec cp {} "$libdir/" \;
+        find "$package_dir" -type f -name 'pg_search*.control' -exec cp {} "$extdir/" \;
+        find "$package_dir" -type f -name 'pg_search*.sql'     -exec cp {} "$extdir/" \;
         test -s "$libdir/pg_search.so"
         test -s "$extdir/pg_search.control"
         echo "Staged artifacts:"; find "$out" -type f
