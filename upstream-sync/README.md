@@ -47,10 +47,7 @@ people join and leave, and nothing surfaces the drift.
 Both rebase and manual promotion poll the latest check results. Failed GitHub
 Actions jobs annotated `EC2 Spot interruption` remain pending while RunsOn retries
 them, unless retries are disabled with `retry=false` or the job has reached the
-third workflow attempt. RunsOn starts retries after the workflow attempt finishes;
-the interrupted check never counts as a pass. Other failures (including failed
-interruption lookups) fail validation immediately. The existing 100-minute timeout
-also bounds retries that never arrive.
+third workflow attempt.
 
 ## Failure alerts
 
