@@ -9,7 +9,7 @@ Default rendering uses a red attachment with `Repository`, `Workflow`, and `View
 ```yaml
 - name: Notify Slack on Failure
   if: failure()
-  uses: paradedb/actions/slack-alert@v12
+  uses: paradedb/actions/slack-alert@v13
   with:
     webhook_url: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
     mention: "<!subteam^S0BLE20RYPM|@pg_search-maintainers>"

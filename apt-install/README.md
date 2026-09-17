@@ -6,7 +6,7 @@ Composite action to install APT packages with retry, exponential backoff, and in
 
 ```yaml
 - name: Install Dependencies
-  uses: paradedb/actions/apt-install@v12
+  uses: paradedb/actions/apt-install@v13
   with:
     packages: >-
       sudo wget git ca-certificates curl gnupg gpg lsb-release

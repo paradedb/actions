@@ -6,7 +6,7 @@ Composite action to check tracked shell scripts for formatting, shebangs, strict
 
 ```yaml
 - name: Lint Bash
-  uses: paradedb/actions/lint-bash@v12
+  uses: paradedb/actions/lint-bash@v13
   with:
     source-path: scripts
 ```

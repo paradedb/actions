@@ -6,7 +6,7 @@ Composite action to lint Dockerfiles with Hadolint.
 
 ```yaml
 - name: Lint Dockerfiles
-  uses: paradedb/actions/lint-docker@v12
+  uses: paradedb/actions/lint-docker@v13
 ```
 
 Inputs:

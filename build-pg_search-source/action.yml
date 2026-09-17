@@ -1,0 +1,170 @@
+# build-pg_search-source/action.yml
+#
+# Compile pg_search from the checked-out source with cargo-pgrx and stage its
+# install artifacts (the .so, .control, and .sql files) into a directory.
+#
+# This runs a plain native build on the runner (no Docker builder stage), so
+# cargo's normal mtime fingerprinting works and an ordinary target/ cache gives
+# real incremental compiles across runs. Consumers overlay the staged `usr/`
+# tree onto a base image (e.g. docker/Dockerfile.benchmarker) or package
+# it however they need.
+#
+# Toolchain versions are read from the repo (rust-toolchain.toml + Cargo.toml)
+# so the build tracks the source under test with no drift.
+
+name: Build pg_search from Source
+description: Compile pg_search with cargo-pgrx and stage its install artifacts.
+
+inputs:
+  pg-version:
+    description: PostgreSQL major version to build against.
+    required: false
+    default: "18"
+  profile:
+    description: Cargo profile to build (release or dev).
+    required: false
+    default: release
+  features:
+    description: Extra Cargo features to enable (space-separated, optional).
+    required: false
+    default: ""
+  target:
+    description: Rust target triple to build for (optional).
+    required: false
+    default: ""
+  target-rustflags:
+    description: >-
+      Extra RUSTFLAGS for the pg_search build (optional, requires target).
+      Applied as CARGO_TARGET_<triple>_RUSTFLAGS on the package step only, so
+      they stay off cargo-pgrx and host build scripts.
+    required: false
+    default: ""
+  cache-prefix-key:
+    description: "rust-cache prefix separating compatible build profiles."
+    required: false
+    default: "v3-rust-cache"
+  cache-save:
+    description: "Whether this run may save a new Rust cache entry."
+    required: false
+    default: "false"
+  cache-on-failure:
+    description: "Whether to save the Rust cache when a later step fails."
+    required: false
+    default: "false"
+
+outputs:
+  artifacts-dir:
+    description: Directory containing the staged install tree (has a `usr/` subdir).
+    value: ${{ steps.stage.outputs.artifacts-dir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure PGDG APT repository
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo install -d -m 0755 /usr/share/keyrings
+        curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+          | sudo tee /usr/share/keyrings/postgresql.asc >/dev/null
+        echo "deb [signed-by=/usr/share/keyrings/postgresql.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+          | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+
+    - name: Install PostgreSQL Packages
+      uses: paradedb/actions/apt-install@v13
+      with:
+        packages: >-
+          postgresql-${{ inputs.pg-version }}
+          postgresql-server-dev-${{ inputs.pg-version }}
+          build-essential ca-certificates curl git pkg-config libssl-dev clang lld libopenblas-dev
+
+    - name: Configure PostgreSQL PATH
+      shell: bash
+      run: echo "/usr/lib/postgresql/${{ inputs.pg-version }}/bin" >> "$GITHUB_PATH"
+
+    - name: Extract Pinned Toolchain Versions
+      id: versions
+      shell: bash
+      run: |
+        set -euo pipefail
+        rust=$(sed -nE 's/^channel = "([^"]+)"$/\1/p' rust-toolchain.toml)
+        pgrx=$(sed -nE 's/^pgrx = "=?([^"]+)"$/\1/p' Cargo.toml)
+        echo "rust=$rust" >> "$GITHUB_OUTPUT"
+        echo "pgrx=$pgrx" >> "$GITHUB_OUTPUT"
+        echo "Resolved rust=$rust cargo-pgrx=$pgrx"
+
+    - name: Install Rust ${{ steps.versions.outputs.rust }}
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: ${{ steps.versions.outputs.rust }}
+        cache: false
+        rustflags: "" # Respect .cargo/config.toml target-cpu flags.
+
+    - name: Install Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        prefix-key: ${{ inputs.cache-prefix-key }}
+        shared-key: pg${{ inputs.pg-version }}
+        cache-targets: true
+        cache-all-crates: true
+        save-if: ${{ inputs.cache-save == 'true' }}
+        cache-on-failure: ${{ inputs.cache-on-failure == 'true' }}
+
+    - name: Install cargo-pgrx ${{ steps.versions.outputs.pgrx }}
+      shell: bash
+      run: |
+        version="${{ steps.versions.outputs.pgrx }}"
+        installed="$(cargo pgrx --version 2>/dev/null || true)"
+        if [ "${installed}" = "cargo-pgrx ${version}" ]; then
+          echo "cargo-pgrx ${version} restored from rust-cache"
+        else
+          cargo install -j "$(nproc)" cargo-pgrx --version "${version}" --debug --locked --force
+        fi
+
+    - name: Initialize pgrx Environment
+      shell: bash
+      run: cargo pgrx init "--pg${{ inputs.pg-version }}=/usr/lib/postgresql/${{ inputs.pg-version }}/bin/pg_config"
+
+    - name: Build and stage pg_search
+      id: stage
+      shell: bash
+      env:
+        PG_VERSION: ${{ inputs.pg-version }}
+        BUILD_PROFILE: ${{ inputs.profile }}
+        BUILD_FEATURES: ${{ inputs.features }}
+        BUILD_TARGET: ${{ inputs.target }}
+        TARGET_RUSTFLAGS: ${{ inputs.target-rustflags }}
+      run: |
+        set -euo pipefail
+        PG_CONFIG="/usr/lib/postgresql/${PG_VERSION}/bin/pg_config"
+        package_dir="$(mktemp -d "${RUNNER_TEMP}/pg_search-package.XXXXXX")"
+        args=(--package pg_search --profile "$BUILD_PROFILE" --pg-config "$PG_CONFIG" --out-dir "$package_dir")
+        if [ -n "$BUILD_FEATURES" ]; then
+          args+=(--features "$BUILD_FEATURES")
+        fi
+        if [ -n "$BUILD_TARGET" ]; then
+          args+=(--target "$BUILD_TARGET")
+        fi
+        if [ -n "${TARGET_RUSTFLAGS}" ]; then
+          if [ -z "${BUILD_TARGET}" ]; then
+            echo "::error::target-rustflags requires the target input" >&2
+            exit 1
+          fi
+          var="CARGO_TARGET_$(echo "${BUILD_TARGET}" | tr '[:lower:]-' '[:upper:]_')_RUSTFLAGS"
+          export "${var}=${TARGET_RUSTFLAGS}"
+        fi
+        cargo pgrx package "${args[@]}"
+
+        # Stage the install tree the way the release .deb lays it out, so a
+        # consumer can COPY artifacts/usr/ over a released image.
+        out="$(mktemp -d "${RUNNER_TEMP}/pg_search-source-artifacts.XXXXXX")"
+        libdir="${out}/usr/lib/postgresql/${PG_VERSION}/lib"
+        extdir="${out}/usr/share/postgresql/${PG_VERSION}/extension"
+        mkdir -p "$libdir" "$extdir"
+        find "$package_dir" -type f -name 'pg_search*.so'      -exec cp {} "$libdir/" \;
+        find "$package_dir" -type f -name 'pg_search*.control' -exec cp {} "$extdir/" \;
+        find "$package_dir" -type f -name 'pg_search*.sql'     -exec cp {} "$extdir/" \;
+        test -s "$libdir/pg_search.so"
+        test -s "$extdir/pg_search.control"
+        echo "Staged artifacts:"; find "$out" -type f
+        echo "artifacts-dir=$out" >> "$GITHUB_OUTPUT"

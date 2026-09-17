@@ -6,7 +6,7 @@ Composite action to check spelling and filenames with codespell.
 
 ```yaml
 - name: Check Typo
-  uses: paradedb/actions/check-typo@v12
+  uses: paradedb/actions/check-typo@v13
   with:
     ignore-words-file: .codespellignore
     skip: Cargo.lock,./tests # Replace with the files and directories you want to skip
