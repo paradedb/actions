@@ -14,9 +14,14 @@ libc compatible with the image that will consume the artifacts.
     profile: release
 ```
 
-The `artifacts-dir` output (`${{ steps.build.outputs.artifacts-dir }}`) contains
-extension files under `usr/lib/postgresql/<major>/lib` and
-`usr/share/postgresql/<major>/extension`, ready to package or copy into an image.
+The action returns an `artifacts-dir` output: the path to the staged extension
+files. With `id: build` above, subsequent steps can read it as
+`${{ steps.build.outputs.artifacts-dir }}`. That directory contains
+`usr/lib/postgresql/<major>/lib` and `usr/share/postgresql/<major>/extension`,
+ready to package or copy into an image.
 
-Optional `with:` inputs configure Cargo features, target, compiler flags, and
-caching. See [action.yml](action.yml) for their names and defaults.
+The example uses the default build settings. For custom builds, add optional
+inputs under `with:`: `features`, `target`, and `target-rustflags` control Cargo
+features, the Rust target, and compiler flags. The `cache-prefix-key`, `cache-save`,
+and `cache-on-failure` inputs control caching. See [action.yml](action.yml) for
+all inputs and their defaults.
