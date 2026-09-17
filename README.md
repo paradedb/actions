@@ -4,9 +4,8 @@ Shared GitHub Actions building blocks for ParadeDB repositories.
 
 ## Components
 
-- [build-pg_search-source](build-pg_search-source/) -- Build and stage pg_search from checked-out source.
-
 - [apt-install](apt-install/) -- Composite action to install APT packages with retry.
+- [build-pg_search-source](build-pg_search-source/) -- Build and stage pg_search from checked-out source.
 - [check-typo](check-typo/) -- Composite action to check spelling with codespell.
 - [lint-actions](lint-actions/) -- Composite action to lint GitHub Actions workflows with actionlint.
 - [lint-bash](lint-bash/) -- Composite action to format and lint Bash scripts.
