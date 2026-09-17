@@ -14,12 +14,14 @@ libc compatible with the image that will consume the artifacts.
     profile: release
 ```
 
-`artifacts-dir` contains `usr/lib/postgresql/<major>/lib` and
-`usr/share/postgresql/<major>/extension`. Consumers package or copy that tree into
-their image. This action does not check out source, publish images, or deploy.
+The action returns an `artifacts-dir` output: the path to the staged extension
+files. With `id: build` above, subsequent steps can read it as
+`${{ steps.build.outputs.artifacts-dir }}`. That directory contains
+`usr/lib/postgresql/<major>/lib` and `usr/share/postgresql/<major>/extension`,
+ready to package or copy into an image.
 
-The optional `features`, `target`, and `target-rustflags` inputs preserve the
-Antithesis instrumentation build. `cache-prefix-key`, `cache-save`, and
-`cache-on-failure` configure caching. Use separate prefixes for incompatible
-profiles, architectures, and source repositories. Toolchain setup intentionally
-lives inside this action so callers do not need repository-local actions.
+The example uses the default build settings. For custom builds, add optional
+inputs under `with:`: `features`, `target`, and `target-rustflags` control Cargo
+features, the Rust target, and compiler flags. The `cache-prefix-key`, `cache-save`,
+and `cache-on-failure` inputs control caching. See [action.yml](action.yml) for
+all inputs and their defaults.
