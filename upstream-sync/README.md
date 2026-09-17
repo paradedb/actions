@@ -4,8 +4,8 @@ Composite actions for keeping a target repository rebased on an upstream reposit
 
 ## Files
 
-- `upstream-sync-rebase/action.yml`: rebase and automatic promotion action.
-- `upstream-sync-promote/action.yml`: manual promotion action for resolved patch branches.
+- `upstream-sync/rebase/action.yml`: rebase and automatic promotion action.
+- `upstream-sync/promote/action.yml`: manual promotion action for resolved patch branches.
 - `upstream-sync/scripts/sync-core.sh`: shared implementation.
 - `upstream-sync/scripts/sync-upstream.sh`: wrapper template to copy into target repos as `scripts/sync-upstream.sh`.
 
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Upstream Rebase
-        uses: paradedb/actions/upstream-sync-rebase@v13
+        uses: paradedb/actions/upstream-sync/rebase@v13
         with:
           github_app_client_id: ${{ vars.PARADEDB_GITHUB_APP_CLIENT_ID }}
           github_app_private_key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Promote Target Patch Branch
-        uses: paradedb/actions/upstream-sync-promote@v13
+        uses: paradedb/actions/upstream-sync/promote@v13
         with:
           branch_name: ${{ inputs.branch_name }}
           github_app_client_id: ${{ vars.PARADEDB_GITHUB_APP_CLIENT_ID }}
