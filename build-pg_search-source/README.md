@@ -1,4 +1,4 @@
-# Build pg_search from source
+# Build pg_search from Source
 
 Compile the checked-out community or enterprise source with its pinned Rust and
 cargo-pgrx versions. Run from the source repository root on a Debian/Ubuntu runner
@@ -6,8 +6,8 @@ cargo-pgrx versions. Run from the source repository root on a Debian/Ubuntu runn
 libc compatible with the image that will consume the artifacts.
 
 ```yaml
-- uses: actions/checkout@v7
-- uses: paradedb/actions/build-pg_search-source@v13
+- name: Build pg_search from Source
+  uses: paradedb/actions/build-pg_search-source@v13
   id: build
   with:
     pg-version: "18"
