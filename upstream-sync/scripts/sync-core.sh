@@ -199,6 +199,22 @@ report_rebase_conflict() {
   echo
 }
 
+# RunsOn retries interrupted workflow attempts 1 and 2 after the whole attempt
+# finishes. The failed check remains visible until GitHub creates its replacement.
+is_retryable_spot_interruption() {
+  local check_id="$1" job_id="$2"
+  local annotations job
+  annotations=$(gh api "repos/${TARGET_REPO}/check-runs/$check_id/annotations" --paginate) || return 1
+  echo "$annotations" | jq -e -s 'any(.[][]; .title == "EC2 Spot interruption")' >/dev/null || return 1
+
+  job=$(gh api "repos/${TARGET_REPO}/actions/jobs/$job_id") || return 1
+  # Retry is enabled by default; labels can be separate or slash-delimited.
+  echo "$job" | jq -e '
+    .run_attempt >= 1 and .run_attempt < 3 and
+    ([.labels[] | split("/")[]] | index("retry=false") == null)
+  ' >/dev/null
+}
+
 poll_ci_status() {
   local branch_name="$1"
   local timeout="6000" # 100 minutes (6000 seconds)
@@ -213,12 +229,29 @@ poll_ci_status() {
     echo "Checking CI status... (${elapsed}s elapsed)"
 
     local api_response
-    api_response=$(gh api "repos/${TARGET_REPO}/commits/$commit_sha/check-runs" --paginate)
+    api_response=$(gh api "repos/${TARGET_REPO}/commits/$commit_sha/check-runs?filter=latest&per_page=100" --paginate)
 
     # Reusable workflows prefix check names with caller jobs (e.g. "call-promote / ").
     # Match the final job name so promotion never waits on its own check.
     # shellcheck disable=SC2016 # $job_name is a jq variable, not a shell variable.
     local ci_check_filter='(.name | split(" / ") | last) as $job_name | $job_name != "Rebase Target on Upstream" and $job_name != "Promote Target Patch Branch to Main" and $job_name != "Upstream Rebase"'
+
+    local failed_jobs check_id job_id job_name
+    failed_jobs=$(echo "$api_response" | jq -r -s "
+      .[].check_runs[] | select($ci_check_filter) |
+      select(.app.slug == \"github-actions\" and .status == \"completed\" and .conclusion == \"failure\") |
+      (.html_url | capture(\"/job/(?<id>[0-9]+)$\").id) as \$job_id |
+      [(.id | tostring), \$job_id, .name] | @tsv")
+    while IFS=$'\t' read -r check_id job_id job_name; do
+      [[ -z "$check_id" ]] && continue
+      if is_retryable_spot_interruption "$check_id" "$job_id"; then
+        echo "⏳ Waiting for RunsOn to retry interrupted job $job_name ($job_id)..."
+        # Pending is deliberate: an interruption must never count as a pass.
+        api_response=$(echo "$api_response" | jq --argjson id "$check_id" '
+          .check_runs |= map(if .id == $id then .status = "in_progress" else . end)
+        ')
+      fi
+    done <<<"$failed_jobs"
 
     local total_checks completed_checks success_checks failure_checks cancelled_checks pending_checks
     total_checks=$(echo "$api_response" | jq -r -s "[.[].check_runs[] | select($ci_check_filter)] | length")
@@ -247,6 +280,7 @@ poll_ci_status() {
 
       echo "Waiting 10 seconds for restarted jobs to register..."
       sleep 10
+      elapsed=$((elapsed + 10))
       continue
     elif [[ "$completed_checks" -eq "$total_checks" && "$total_checks" -gt 0 ]]; then
       echo "✅ CI validation passed: All $total_checks checks completed successfully"
