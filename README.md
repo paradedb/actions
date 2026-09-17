@@ -14,7 +14,10 @@ Shared GitHub Actions building blocks for ParadeDB repositories.
 - [lint-pr-title](lint-pr-title/) -- Composite action to validate pull request titles.
 - [lint-yaml](lint-yaml/) -- Composite action to lint YAML with Prettier.
 - [slack-alert](slack-alert/) -- Composite action for Slack failure alerts.
-- [upstream-sync](upstream-sync/) -- Reusable workflows for keeping a target repository rebased on an upstream repository.
+- [upstream-sync-rebase](upstream-sync-rebase/) -- Composite action to rebase target patches onto upstream.
+- [upstream-sync-promote](upstream-sync-promote/) -- Composite action to approve and promote resolved patch branches.
+
+See [Upstream Sync](upstream-sync/) for setup and caller examples.
 
 ## License
 
