@@ -12,7 +12,7 @@
 # Toolchain versions are read from the repo (rust-toolchain.toml + Cargo.toml)
 # so the build tracks the source under test with no drift.
 
-name: Build pg_search from source
+name: Build pg_search from Source
 description: Compile pg_search with cargo-pgrx and stage its install artifacts.
 
 inputs:
