@@ -6,7 +6,7 @@ Composite action to lint Markdown with markdownlint and format Markdown and MDX 
 
 ```yaml
 - name: Lint Markdown
-  uses: paradedb/actions/lint-markdown@v12
+  uses: paradedb/actions/lint-markdown@v13
 ```
 
 Inputs:

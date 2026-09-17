@@ -26,7 +26,7 @@ Add a caller workflow:
 ```yaml
 jobs:
   upstream-rebase:
-    uses: paradedb/actions/.github/workflows/upstream-sync-rebase.yml@v12
+    uses: paradedb/actions/.github/workflows/upstream-sync-rebase.yml@v13
     with:
       github_app_client_id: ${{ vars.PARADEDB_GITHUB_APP_CLIENT_ID }}
       approvers: pg_search-maintainers

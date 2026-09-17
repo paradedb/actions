@@ -7,7 +7,7 @@ libc compatible with the image that will consume the artifacts.
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: paradedb/actions/build-pg_search-source@<commit>
+- uses: paradedb/actions/build-pg_search-source@v13
   id: build
   with:
     pg-version: "18"
