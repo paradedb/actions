@@ -9,7 +9,7 @@ libc compatible with the image that will consume the artifacts.
 
 ```yaml
 - name: Build pg_search from Source
-  uses: paradedb/actions/build-pg_search-source@v13
+  uses: paradedb/actions/build-pg_search-source@v14
   id: build
   with:
     pg-version: "18"

@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate PR Title
-        uses: paradedb/actions/lint-pr-title@v13
+        uses: paradedb/actions/lint-pr-title@v14
 ```
 
 Include `edited` in the calling workflow's pull request event types so title changes rerun the check.

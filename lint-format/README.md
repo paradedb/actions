@@ -6,7 +6,7 @@ Composite action to check tracked files for CRLF endings, trailing whitespace, a
 
 ```yaml
 - name: Lint File Format
-  uses: paradedb/actions/lint-format@v13
+  uses: paradedb/actions/lint-format@v14
   with:
     exclude: |
       *.sql
