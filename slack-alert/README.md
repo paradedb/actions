@@ -6,7 +6,7 @@ Default rendering uses a red attachment with `Repository`, `Workflow`, and `View
 
 ## Usage
 
-### Non-Spot jobs
+### Non-Spot Jobs
 
 ```yaml
 - name: Notify Slack on Failure
@@ -18,7 +18,7 @@ Default rendering uses a red attachment with `Repository`, `Workflow`, and `View
     title: "${{ github.workflow }} workflow failed"
 ```
 
-### Spot jobs
+### Spot Jobs
 
 Use a dependent GitHub-hosted job with all relevant dependencies when enabling Spot retry suppression:
 
