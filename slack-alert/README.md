@@ -22,7 +22,7 @@ Use this default configuration for workflows that do not use RunsOn Spot instanc
 
 ### Spot Jobs
 
-Use a dependent GitHub-hosted job with all relevant dependencies when enabling Spot retry suppression:
+Enable `suppress_spot_retries` in a dependent GitHub-hosted job and pass all relevant dependencies through `job_results`. This suppresses alerts for retryable Spot interruptions on attempts 1–2; ordinary failures, exhausted retries, and detector errors still alert. If RunsOn never starts the retry, no fallback alert is sent.
 
 ```yaml
 notify-slack-on-failure:
@@ -42,8 +42,6 @@ notify-slack-on-failure:
         suppress_spot_retries: "true"
         job_results: ${{ toJSON(needs) }} # Required when suppression is enabled
 ```
-
-`suppress_spot_retries` requires `job_results` and suppresses alerts for retryable Spot interruptions on attempts 1–2 of the current run. Ordinary failures, exhausted retries, and detector errors still alert. If RunsOn never starts the retry, no fallback alert is sent.
 
 ## Inputs
 
