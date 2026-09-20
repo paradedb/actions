@@ -8,6 +8,8 @@ Default rendering uses a red attachment with `Repository`, `Workflow`, and `View
 
 ### Non-Spot Jobs
 
+Use this default configuration for workflows that do not use RunsOn Spot instances.
+
 ```yaml
 - name: Notify Slack on Failure
   if: failure()
