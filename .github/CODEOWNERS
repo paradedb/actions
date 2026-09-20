@@ -1,0 +1,15 @@
+# Order is important. The last matching pattern has the most precedence
+
+/.github/                      @philippemnoel @stuhood
+/apt-install/                  @philippemnoel @stuhood
+/build-pg_search-source/       @philippemnoel @stuhood
+/check-typo/                   @philippemnoel @stuhood
+/lint-actions/                 @philippemnoel @stuhood
+/lint-bash/                    @philippemnoel @stuhood
+/lint-docker/                  @philippemnoel @stuhood
+/lint-format/                  @philippemnoel @stuhood
+/lint-markdown/                @philippemnoel @stuhood
+/lint-pr-title/                @philippemnoel @stuhood
+/lint-yaml/                    @philippemnoel @stuhood
+/slack-alert/                  @philippemnoel @stuhood
+/upstream-sync/                @philippemnoel @stuhood
