@@ -6,15 +6,44 @@ Default rendering uses a red attachment with `Repository`, `Workflow`, and `View
 
 ## Usage
 
+### Non-Spot Jobs
+
+Use this default configuration for workflows that do not use RunsOn Spot instances.
+
 ```yaml
 - name: Notify Slack on Failure
   if: failure()
-  uses: paradedb/actions/slack-alert@v13
+  uses: paradedb/actions/slack-alert@v14
   with:
     webhook_url: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
     mention: "<!subteam^S0BLE20RYPM|@pg_search-maintainers>"
     title: "${{ github.workflow }} workflow failed"
 ```
+
+### Spot Jobs
+
+Use this configuration for workflows that use RunsOn Spot instances to defer failure alerts while RunsOn retries interrupted jobs.
+
+```yaml
+notify-slack-on-failure:
+  needs: [build]
+  if: always() && needs.build.result == 'failure'
+  runs-on: ubuntu-latest
+  permissions: # Required for Spot retry detection
+    actions: read
+    checks: read
+  steps:
+    - name: Notify Slack on Failure
+      uses: paradedb/actions/slack-alert@v14
+      with:
+        webhook_url: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
+        mention: "<!subteam^S0BLE20RYPM|@pg_search-maintainers>"
+        title: "${{ github.workflow }} workflow failed"
+        suppress_spot_retries: "true"
+        job_results: ${{ toJSON(needs) }} # Required when suppression is enabled
+```
+
+## Inputs
 
 For a custom Slack body, write JSON to a file and pass `payload_file`.
 
@@ -24,4 +53,6 @@ with:
   payload_file: /tmp/slack-payload.json
 ```
 
-Inputs: `webhook_url`, `mention`, `title`, `text`, `color`, `payload_file`, `repository`, `branch`, `workflow`, `actor`, `run_id`, `run_url`.
+`webhook_url`, `mention`, `title`, `text`, `color`, `payload_file`, `repository`, `branch`, `workflow`, `actor`, `run_id`, `run_url`, `suppress_spot_retries`, `job_results`.
+
+`suppress_spot_retries` defaults to `"false"`; `job_results` is optional unless suppression is enabled.

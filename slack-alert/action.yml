@@ -50,11 +50,34 @@ inputs:
     description: Run URL for generated payloads. Defaults to the current GitHub Actions run URL when available.
     required: false
     default: ""
+  suppress_spot_retries:
+    description: Suppress alerts while RunsOn retries Spot interruptions.
+    required: false
+    default: "false"
+  job_results:
+    description: toJSON(needs) from the notification job; required for Spot retry suppression.
+    required: false
+    default: ""
 
 runs:
   using: composite
   steps:
+    - name: Detect Retryable Spot Interruption
+      if: ${{ always() && inputs.suppress_spot_retries == 'true' && inputs.webhook_url != '' }}
+      id: spot-retry
+      continue-on-error: true
+      uses: runs-on/spot-retry-gate/.github/actions/detect@v1
+      with:
+        github_token: ${{ github.token }}
+        repository: ${{ github.repository }}
+        run_id: ${{ github.run_id }}
+        run_attempt: ${{ github.run_attempt }}
+        job_results: ${{ inputs.job_results }}
+        check_name: slack-alert
+        api_url: ${{ github.api_url }}
+
     - name: Post Slack Alert
+      if: ${{ always() && steps.spot-retry.outputs.spot_interrupted != 'true' }}
       shell: bash
       env:
         SLACK_ALERT_WEBHOOK_URL: ${{ inputs.webhook_url }}
