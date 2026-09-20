@@ -6,6 +6,20 @@ Default rendering uses a red attachment with `Repository`, `Workflow`, and `View
 
 ## Usage
 
+### Non-Spot jobs
+
+```yaml
+- name: Notify Slack on Failure
+  if: failure()
+  uses: paradedb/actions/slack-alert@v14
+  with:
+    webhook_url: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
+    mention: "<!subteam^S0BLE20RYPM|@pg_search-maintainers>"
+    title: "${{ github.workflow }} workflow failed"
+```
+
+### Spot jobs
+
 Use a dependent GitHub-hosted job with all relevant dependencies when enabling Spot retry suppression:
 
 ```yaml
@@ -23,9 +37,13 @@ notify-slack-on-failure:
         webhook_url: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
         mention: "<!subteam^S0BLE20RYPM|@pg_search-maintainers>"
         title: "${{ github.workflow }} workflow failed"
-        suppress_spot_retries: "true" # Optional; defaults to false
-        job_results: ${{ toJSON(needs) }}
+        suppress_spot_retries: "true"
+        job_results: ${{ toJSON(needs) }} # Required when suppression is enabled
 ```
+
+`suppress_spot_retries` requires `job_results` and suppresses alerts for retryable Spot interruptions on attempts 1–2 of the current run. Ordinary failures, exhausted retries, and detector errors still alert. If RunsOn never starts the retry, no fallback alert is sent.
+
+## Inputs
 
 For a custom Slack body, write JSON to a file and pass `payload_file`.
 
@@ -35,6 +53,6 @@ with:
   payload_file: /tmp/slack-payload.json
 ```
 
-Inputs: `webhook_url`, `mention`, `title`, `text`, `color`, `payload_file`, `repository`, `branch`, `workflow`, `actor`, `run_id`, `run_url`, `suppress_spot_retries`, `job_results`.
+`webhook_url`, `mention`, `title`, `text`, `color`, `payload_file`, `repository`, `branch`, `workflow`, `actor`, `run_id`, `run_url`, `suppress_spot_retries`, `job_results`.
 
-`suppress_spot_retries` requires `job_results` and suppresses alerts for retryable Spot interruptions on attempts 1–2 of the current run. Ordinary failures, exhausted retries, and detector errors still alert. If RunsOn never starts the retry, no fallback alert is sent.
+`suppress_spot_retries` defaults to `"false"`; `job_results` is optional unless suppression is enabled.
