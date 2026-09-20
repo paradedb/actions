@@ -2,14 +2,6 @@ name: Slack Alert
 description: Post a standardized GitHub Actions alert to Slack.
 
 inputs:
-  suppress_spot_retries:
-    description: Suppress alerts while RunsOn retries Spot interruptions.
-    required: false
-    default: "false"
-  job_results:
-    description: toJSON(needs) from the notification job; required for Spot retry suppression.
-    required: false
-    default: ""
   webhook_url:
     description: Slack incoming webhook URL. If empty, the alert is skipped.
     required: false
@@ -56,6 +48,14 @@ inputs:
     default: ""
   run_url:
     description: Run URL for generated payloads. Defaults to the current GitHub Actions run URL when available.
+    required: false
+    default: ""
+  suppress_spot_retries:
+    description: Suppress alerts while RunsOn retries Spot interruptions.
+    required: false
+    default: "false"
+  job_results:
+    description: toJSON(needs) from the notification job; required for Spot retry suppression.
     required: false
     default: ""
 
