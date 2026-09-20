@@ -28,12 +28,7 @@ Inputs: `webhook_url`, `mention`, `title`, `text`, `color`, `payload_file`, `rep
 
 ## RunsOn Spot retries
 
-Set `suppress_spot_retries` to `"true"` to suppress alerts for retryable Spot
-interruptions on attempts 1 and 2. Ordinary failures, attempt 3 and later, and
-detector errors still send alerts. Suppression is disabled by default.
-
-Use a separate GitHub-hosted notification job so an interrupted runner cannot
-prevent detection. Pass all relevant job results and grant read permissions:
+Opt in from a separate GitHub-hosted notification job with all relevant dependencies:
 
 ```yaml
 notify-slack-on-failure:
@@ -51,9 +46,6 @@ notify-slack-on-failure:
         webhook_url: ${{ secrets.SLACK_GITHUB_CHANNEL_WEBHOOK_URL }}
 ```
 
-`github_token` defaults to `github.token` and can be overridden. Detection always
-uses the current workflow run; the existing `repository` and `run_id` inputs only
-customize the Slack message.
-
-RunsOn schedules retries after the workflow finishes. If a retry never starts,
-the suppressed attempt does not send a later fallback alert.
+Only retryable Spot interruptions on attempts 1–2 suppress alerts; ordinary failures,
+exhausted retries, and detector errors still alert. Detection uses the current run.
+If RunsOn never starts the retry, no fallback alert is sent.
