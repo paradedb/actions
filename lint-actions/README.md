@@ -6,5 +6,5 @@ Composite action to validate GitHub Actions workflows with actionlint.
 
 ```yaml
 - name: Lint GitHub Actions
-  uses: paradedb/actions/lint-actions@v13
+  uses: paradedb/actions/lint-actions@v14
 ```

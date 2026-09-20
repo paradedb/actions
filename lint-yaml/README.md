@@ -6,7 +6,7 @@ Composite action to check YAML formatting with Prettier.
 
 ```yaml
 - name: Lint YAML
-  uses: paradedb/actions/lint-yaml@v13
+  uses: paradedb/actions/lint-yaml@v14
 ```
 
 Inputs:
