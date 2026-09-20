@@ -36,7 +36,7 @@ jobs:
       PARADEDB_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
 ```
 
-For manual promotion, call `.github/workflows/upstream-sync-promote.yml@v12`.
+For manual promotion, call `.github/workflows/upstream-sync-promote.yml@v13`.
 
 Prefer an org team slug for `approvers` over a list of usernames. Both are
 accepted, but a hardcoded list silently drifts from the team it mirrors as
