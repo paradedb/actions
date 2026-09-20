@@ -1,1 +1,6 @@
-* @philippemnoel @stuhood
+# Order is important. The last matching pattern has the most precedence
+
+/.github/        @paradedb/cloud-maintainers
+/cells/          @paradedb/cloud-maintainers
+/controlplane/   @paradedb/cloud-maintainers
+/dataplane/      @paradedb/cloud-maintainers
