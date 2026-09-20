@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest an improvement to a shared action or workflow.
+labels:
+  - feature
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What feature are you requesting?
+      description: Describe the desired feature and the action or workflow it affects.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why are you requesting this feature?
+      description: Explain the problem or use case this would address.
+    validations:
+      required: true
+  - type: textarea
+    id: how
+    attributes:
+      label: What is your proposed implementation?
+      description: Describe how you would implement the feature, if known.
