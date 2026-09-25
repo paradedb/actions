@@ -88,9 +88,10 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          INPUTS_BRANCH_NAME: ${{ inputs.branch_name }}
         run: |
           set -euxo pipefail
-          BRANCH_NAME="${{ inputs.branch_name }}"
+          BRANCH_NAME="${INPUTS_BRANCH_NAME}"
           echo "Starting branch promotion process..."
           echo "Branch: $BRANCH_NAME"
 

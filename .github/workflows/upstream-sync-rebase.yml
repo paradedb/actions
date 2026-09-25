@@ -108,9 +108,11 @@ jobs:
 
       - name: Promote Patch Branch
         if: steps.rebase.outputs.branch_name != ''
+        env:
+          STEP_REBASE_BRANCH_NAME: ${{ steps.rebase.outputs.branch_name }}
         run: |
           set -euo pipefail
-          PATCH_BRANCH_NAME="${{ steps.rebase.outputs.branch_name }}"
+          PATCH_BRANCH_NAME="${STEP_REBASE_BRANCH_NAME}"
           git push origin "$PATCH_BRANCH_NAME:main" --force-with-lease
           git push origin --delete "$PATCH_BRANCH_NAME"
 

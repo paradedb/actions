@@ -11,8 +11,13 @@ runs:
   steps:
     - name: Install APT packages
       shell: bash
+      env:
+        INPUTS_PACKAGES: ${{ inputs.packages }}
       run: |
         set -euo pipefail
+
+        # Split the whitespace-separated package list without evaluating shell syntax.
+        read -r -a packages <<< "${INPUTS_PACKAGES//$'\n'/ }"
 
         sudo=""
         if [ "$(id -u)" -ne 0 ]; then
@@ -33,7 +38,7 @@ runs:
           if $sudo env DEBIAN_FRONTEND=noninteractive apt-get update && \
              $sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y \
                -o Acquire::Retries=3 \
-               ${{ inputs.packages }}; then
+               "${packages[@]}"; then
             break
           fi
 
