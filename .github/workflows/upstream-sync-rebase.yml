@@ -21,6 +21,12 @@ on:
         required: false
       PARADEDB_GITHUB_APP_PRIVATE_KEY:
         required: true
+      PARADEDB_GITHUB_BOT_COMMIT_SIGNING_KEY:
+        required: true
+      PARADEDB_GITHUB_BOT_COMMIT_SIGNING_USER:
+        required: true
+      PARADEDB_GITHUB_BOT_COMMIT_SIGNING_EMAIL:
+        required: true
 
 permissions:
   actions: write
@@ -56,9 +62,15 @@ jobs:
         env:
           APP_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git config --global user.name "paradedb-github-app[bot]"
-          git config --global user.email "282009505+paradedb-github-app[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Configure Bot Commit Signing
+        uses: paradedb/paradedb/.github/actions/setup-git-signing@de4fda6dc5b09499e4603ab7a916109357b6602e
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          signing-key: ${{ secrets.PARADEDB_GITHUB_BOT_COMMIT_SIGNING_KEY }}
+          signing-user: ${{ secrets.PARADEDB_GITHUB_BOT_COMMIT_SIGNING_USER }}
+          signing-email: ${{ secrets.PARADEDB_GITHUB_BOT_COMMIT_SIGNING_EMAIL }}
 
       - name: Install GitHub CLI
         run: |
@@ -101,6 +113,10 @@ jobs:
           PATCH_BRANCH_NAME="${{ steps.rebase.outputs.branch_name }}"
           git push origin "$PATCH_BRANCH_NAME:main" --force-with-lease
           git push origin --delete "$PATCH_BRANCH_NAME"
+
+      - name: Remove Bot Signing Key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/github-bot-signing-key" "$RUNNER_TEMP/github-bot-signing-key.allowed-signers"
 
       - name: Notify Slack on Failure
         if: failure()
