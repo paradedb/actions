@@ -69,7 +69,9 @@ runs:
 
     - name: Configure PostgreSQL PATH
       shell: bash
-      run: echo "/usr/lib/postgresql/${{ inputs.pg-version }}/bin" >> "$GITHUB_PATH"
+      env:
+        INPUTS_PG_VERSION: ${{ inputs.pg-version }}
+      run: echo "/usr/lib/postgresql/${INPUTS_PG_VERSION}/bin" >> "$GITHUB_PATH"
 
     - name: Extract Pinned Toolchain Versions
       id: versions
@@ -101,8 +103,10 @@ runs:
 
     - name: Install cargo-pgrx ${{ steps.versions.outputs.pgrx }}
       shell: bash
+      env:
+        STEP_VERSIONS_PGRX: ${{ steps.versions.outputs.pgrx }}
       run: |
-        version="${{ steps.versions.outputs.pgrx }}"
+        version="${STEP_VERSIONS_PGRX}"
         installed="$(cargo pgrx --version 2>/dev/null || true)"
         if [ "${installed}" = "cargo-pgrx ${version}" ]; then
           echo "cargo-pgrx ${version} restored from rust-cache"
@@ -112,7 +116,9 @@ runs:
 
     - name: Initialize pgrx Environment
       shell: bash
-      run: cargo pgrx init "--pg${{ inputs.pg-version }}=/usr/lib/postgresql/${{ inputs.pg-version }}/bin/pg_config"
+      env:
+        INPUTS_PG_VERSION: ${{ inputs.pg-version }}
+      run: cargo pgrx init "--pg${INPUTS_PG_VERSION}=/usr/lib/postgresql/${INPUTS_PG_VERSION}/bin/pg_config"
 
     - name: Build and stage pg_search
       id: stage
