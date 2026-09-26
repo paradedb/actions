@@ -14,6 +14,7 @@ Shared GitHub Actions building blocks for ParadeDB repositories.
 - [lint-markdown](lint-markdown/) — Composite action to lint Markdown with markdownlint and Prettier.
 - [lint-pr-title](lint-pr-title/) — Composite action to validate pull request titles.
 - [lint-yaml](lint-yaml/) — Composite action to lint YAML with Prettier.
+- [setup-git-signing](setup-git-signing/) — Configure SSH commit and tag signing.
 - [slack-alert](slack-alert/) — Composite action for Slack failure alerts.
 - [upstream-sync](upstream-sync/) — Reusable workflows for keeping a target repository rebased on an upstream repository.
 
