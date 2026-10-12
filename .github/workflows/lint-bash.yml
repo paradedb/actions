@@ -39,3 +39,6 @@ jobs:
 
       - name: Lint Bash
         uses: ./lint-bash
+
+      - name: Test Promotion Validation
+        run: bash upstream-sync/tests/promotion.sh

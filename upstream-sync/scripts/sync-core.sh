@@ -204,10 +204,10 @@ report_rebase_conflict() {
 is_retryable_spot_interruption() {
   local check_id="$1" job_id="$2"
   local annotations job
-  annotations=$(gh api "repos/${TARGET_REPO}/check-runs/$check_id/annotations" --paginate) || return 1
+  annotations=$(gh api "repos/${TARGET_REPO}/check-runs/$check_id/annotations" --paginate) || return 2
   echo "$annotations" | jq -e -s 'any(.[][]; .title == "EC2 Spot interruption")' >/dev/null || return 1
 
-  job=$(gh api "repos/${TARGET_REPO}/actions/jobs/$job_id") || return 1
+  job=$(gh api "repos/${TARGET_REPO}/actions/jobs/$job_id") || return 2
   # Retry is enabled by default; labels can be separate or slash-delimited.
   echo "$job" | jq -e '
     .run_attempt >= 1 and .run_attempt < 3 and
@@ -229,7 +229,14 @@ poll_ci_status() {
     echo "Checking CI status... (${elapsed}s elapsed)"
 
     local api_response
-    api_response=$(gh api "repos/${TARGET_REPO}/commits/$commit_sha/check-runs?filter=latest&per_page=100" --paginate)
+    if ! api_response=$(gh api "repos/${TARGET_REPO}/commits/$commit_sha/check-runs?filter=latest&per_page=100" --paginate); then
+      echo "❌ Unable to read CI checks for $commit_sha; refusing promotion" >&2
+      return 1
+    fi
+    if ! echo "$api_response" | jq -e -s 'length > 0 and all(.[]; .check_runs | type == "array")' >/dev/null; then
+      echo "❌ Invalid CI checks response for $commit_sha; refusing promotion" >&2
+      return 1
+    fi
 
     # Reusable workflows prefix check names with caller jobs (e.g. "call-promote / ").
     # Match the final job name so promotion never waits on its own check.
@@ -250,6 +257,9 @@ poll_ci_status() {
         api_response=$(echo "$api_response" | jq --argjson id "$check_id" '
           .check_runs |= map(if .id == $id then .status = "in_progress" else . end)
         ')
+      elif [[ $? -eq 2 ]]; then
+        echo "❌ Unable to inspect interrupted job $job_name ($job_id); refusing promotion" >&2
+        return 1
       fi
     done <<<"$failed_jobs"
 
@@ -383,7 +393,7 @@ do_rebase() {
   fi
 }
 
-do_promote() {
+validate_promotion() {
   if [[ $# -ne 1 ]]; then
     echo "Usage: $0 promote <branch-name>" >&2
     exit 1
@@ -418,6 +428,18 @@ do_promote() {
     exit "$CI_EXIT_CODE"
   fi
 
+}
+
+# Only call after validate_promotion succeeds. Pin the validated commit across
+# workflow steps so a branch update cannot slip past CI validation.
+complete_promotion() {
+  local BRANCH_NAME="$1" validated_sha="$2"
+  fetch_branch "${TARGET_REMOTE}" "$BRANCH_NAME"
+  if [[ "$(git rev-parse "${TARGET_REMOTE}/$BRANCH_NAME")" != "$validated_sha" ]]; then
+    echo "❌ Branch '$BRANCH_NAME' changed after CI validation; refusing promotion" >&2
+    return 1
+  fi
+
   local TAG_NAME
   TAG_NAME="manual-promotion-history-$(date -u +%Y-%m-%d-%H%M%S)"
   echo "Current ${TARGET_BRANCH} branch points to: $(git rev-parse --short "${TARGET_REMOTE}/${TARGET_BRANCH}")"
@@ -430,6 +452,11 @@ do_promote() {
   git push --force-with-lease="refs/heads/${TARGET_BRANCH}:$(git rev-parse "${TARGET_REMOTE}/${TARGET_BRANCH}")" \
     "${TARGET_REMOTE}" "refs/remotes/${TARGET_REMOTE}/${BRANCH_NAME}:refs/heads/${TARGET_BRANCH}"
   git push "${TARGET_REMOTE}" --delete "$BRANCH_NAME"
+}
+
+do_promote() {
+  validate_promotion "$@"
+  complete_promotion "$1" "$(git rev-parse "${TARGET_REMOTE}/$1")"
 }
 
 # Show the range-diff between a resolved patch branch and the current target,

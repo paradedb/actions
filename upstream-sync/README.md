@@ -70,3 +70,22 @@ Required repository config:
 - `secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY`
 - optional `vars.USERNAME_MAPPING_GITHUB_TO_SLACK`
 - optional Slack webhook secret mapped to `SLACK_WEBHOOK_URL`
+
+## Promotion authentication
+
+The reusable promotion workflow validates CI with the job's `GITHUB_TOKEN`, then
+creates a fresh GitHub App token for the push. It verifies that the patch branch
+still points to the validated commit before promoting it. API errors stop
+validation immediately. Local `promote` commands still validate and push in one
+invocation using the caller's credentials.
+
+When adopting this workflow, update both the reusable workflow reference and the
+wrapper's `CORE_SCRIPT_URL` to the same new release tag. The workflow uses
+`validate_promotion` and `complete_promotion` from the matching core script. The
+caller must grant `checks: read` alongside the existing promotion permissions.
+
+Run the promotion regression tests with:
+
+```sh
+bash upstream-sync/tests/promotion.sh
+```

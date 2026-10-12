@@ -23,6 +23,7 @@ on:
 
 permissions:
   actions: write
+  checks: read
   contents: write
   issues: write
   pull-requests: read
@@ -46,7 +47,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ github.token }}
           persist-credentials: false
 
       - name: Extract Sync Configuration
@@ -75,31 +76,45 @@ jobs:
             ```
             ...to view the diff between this branch and `${{ steps.config.outputs.target_branch }}`.
 
-      - name: Configure Git
+      - name: Validate Branch CI
+        id: validate
         env:
-          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          INPUTS_BRANCH_NAME: ${{ inputs.branch_name }}
         run: |
-          git config --global user.name "paradedb-github-app[bot]"
-          git config --global user.email "282009505+paradedb-github-app[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          set -euo pipefail
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          source scripts/sync-upstream.sh
+          validate_promotion "$INPUTS_BRANCH_NAME"
+          echo "commit_sha=$(git rev-parse "${TARGET_REMOTE}/$INPUTS_BRANCH_NAME")" >> "$GITHUB_OUTPUT"
+
+      # App tokens expire after one hour. Mint the push token only after the
+      # potentially 100-minute CI wait, including any Spot interruption retries.
+      - name: Generate Promotion Token
+        id: promotion-token
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: ${{ inputs.github_app_client_id }}
+          private-key: ${{ secrets.PARADEDB_GITHUB_APP_PRIVATE_KEY }}
 
       - name: Promote Branch to Main
         id: promote
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_TOKEN: ${{ steps.promotion-token.outputs.token }}
           INPUTS_BRANCH_NAME: ${{ inputs.branch_name }}
+          VALIDATED_SHA: ${{ steps.validate.outputs.commit_sha }}
         run: |
-          set -euxo pipefail
-          BRANCH_NAME="${INPUTS_BRANCH_NAME}"
-          echo "Starting branch promotion process..."
-          echo "Branch: $BRANCH_NAME"
-
-          ./scripts/sync-upstream.sh promote "$BRANCH_NAME"
+          set -euo pipefail
+          git config --global user.name "paradedb-github-app[bot]"
+          git config --global user.email "282009505+paradedb-github-app[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          source scripts/sync-upstream.sh
+          complete_promotion "$INPUTS_BRANCH_NAME" "$VALIDATED_SHA"
 
           echo "✅ Branch promotion completed successfully"
           echo "success=true" >> "$GITHUB_OUTPUT"
-          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+          echo "branch_name=$INPUTS_BRANCH_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Notify Slack on Failure
         if: failure()
