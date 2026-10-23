@@ -20,4 +20,4 @@ Shared GitHub Actions building blocks for ParadeDB repositories.
 
 ## License
 
-MIT
+MIT License. See [LICENSE](LICENSE) for details.
