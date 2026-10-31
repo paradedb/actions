@@ -60,7 +60,7 @@ runs:
           | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
 
     - name: Install PostgreSQL Packages
-      uses: paradedb/actions/apt-install@v14
+      uses: paradedb/actions/apt-install@8f17ece584400f0113ff8ddb1b14f28b6fd10050 # v14
       with:
         packages: >-
           postgresql-${{ inputs.pg-version }}
@@ -85,14 +85,14 @@ runs:
         echo "Resolved rust=$rust cargo-pgrx=$pgrx"
 
     - name: Install Rust ${{ steps.versions.outputs.rust }}
-      uses: actions-rust-lang/setup-rust-toolchain@v1
+      uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
       with:
         toolchain: ${{ steps.versions.outputs.rust }}
         cache: false
         rustflags: "" # Respect .cargo/config.toml target-cpu flags.
 
     - name: Install Rust Cache
-      uses: Swatinem/rust-cache@v2
+      uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
       with:
         prefix-key: ${{ inputs.cache-prefix-key }}
         shared-key: pg${{ inputs.pg-version }}
