@@ -28,7 +28,7 @@ runs:
 
     - name: Run Hadolint
       if: steps.dockerfiles.outputs.files != ''
-      uses: jbergstroem/hadolint-gh-action@v1
+      uses: jbergstroem/hadolint-gh-action@d2f58da7f4f242dc0b6c5ef882ad4f8e871ba96b # v1
       with:
         dockerfile: ${{ steps.dockerfiles.outputs.files }}
         config_file: ${{ inputs.config }}

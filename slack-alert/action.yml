@@ -66,7 +66,7 @@ runs:
       if: ${{ always() && inputs.suppress_spot_retries == 'true' && inputs.webhook_url != '' }}
       id: spot-retry
       continue-on-error: true
-      uses: runs-on/spot-retry-gate/.github/actions/detect@v1
+      uses: runs-on/spot-retry-gate/.github/actions/detect@451eea7c3d2c58d14a1f80f0bbb99eaa347b9471 # v1
       with:
         github_token: ${{ github.token }}
         repository: ${{ github.repository }}
