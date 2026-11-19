@@ -89,7 +89,17 @@ runs:
       shell: bash
       env:
         PG_VERSION: ${{ steps.postgres.outputs.version }}
-      run: echo "/usr/lib/postgresql/${PG_VERSION}/bin" >> "$GITHUB_PATH"
+      run: |
+        case "$PG_VERSION" in
+          15) echo "/usr/lib/postgresql/15/bin" ;;
+          16) echo "/usr/lib/postgresql/16/bin" ;;
+          17) echo "/usr/lib/postgresql/17/bin" ;;
+          18) echo "/usr/lib/postgresql/18/bin" ;;
+          *)
+            echo "::error::Unexpected resolved PostgreSQL version" >&2
+            exit 1
+            ;;
+        esac >> "$GITHUB_PATH"
 
     - name: Extract Pinned Toolchain Versions
       id: versions
