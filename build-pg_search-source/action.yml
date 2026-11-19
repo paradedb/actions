@@ -6,7 +6,7 @@ description: Compile pg_search with cargo-pgrx and stage its install artifacts.
 
 inputs:
   pg-version:
-    description: PostgreSQL major version to build against.
+    description: PostgreSQL major version to build against (15, 16, 17, or 18).
     required: false
     default: "18"
   profile:
@@ -49,6 +49,24 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Resolve PostgreSQL version
+      id: postgres
+      shell: bash
+      env:
+        INPUTS_PG_VERSION: ${{ inputs.pg-version }}
+      run: |
+        case "$INPUTS_PG_VERSION" in
+          15) version=15 ;;
+          16) version=16 ;;
+          17) version=17 ;;
+          18) version=18 ;;
+          *)
+            echo "::error::pg-version must be 15, 16, 17, or 18" >&2
+            exit 1
+            ;;
+        esac
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
     - name: Configure PGDG APT repository
       shell: bash
       run: |
@@ -63,15 +81,15 @@ runs:
       uses: paradedb/actions/apt-install@8f17ece584400f0113ff8ddb1b14f28b6fd10050 # v14
       with:
         packages: >-
-          postgresql-${{ inputs.pg-version }}
-          postgresql-server-dev-${{ inputs.pg-version }}
+          postgresql-${{ steps.postgres.outputs.version }}
+          postgresql-server-dev-${{ steps.postgres.outputs.version }}
           build-essential ca-certificates curl git pkg-config libssl-dev clang lld libopenblas-dev
 
     - name: Configure PostgreSQL PATH
       shell: bash
       env:
-        INPUTS_PG_VERSION: ${{ inputs.pg-version }}
-      run: echo "/usr/lib/postgresql/${INPUTS_PG_VERSION}/bin" >> "$GITHUB_PATH"
+        PG_VERSION: ${{ steps.postgres.outputs.version }}
+      run: echo "/usr/lib/postgresql/${PG_VERSION}/bin" >> "$GITHUB_PATH"
 
     - name: Extract Pinned Toolchain Versions
       id: versions
@@ -95,7 +113,7 @@ runs:
       uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
       with:
         prefix-key: ${{ inputs.cache-prefix-key }}
-        shared-key: pg${{ inputs.pg-version }}
+        shared-key: pg${{ steps.postgres.outputs.version }}
         cache-targets: true
         cache-all-crates: true
         save-if: ${{ inputs.cache-save == 'true' }}
@@ -117,14 +135,14 @@ runs:
     - name: Initialize pgrx Environment
       shell: bash
       env:
-        INPUTS_PG_VERSION: ${{ inputs.pg-version }}
-      run: cargo pgrx init "--pg${INPUTS_PG_VERSION}=/usr/lib/postgresql/${INPUTS_PG_VERSION}/bin/pg_config"
+        PG_VERSION: ${{ steps.postgres.outputs.version }}
+      run: cargo pgrx init "--pg${PG_VERSION}=/usr/lib/postgresql/${PG_VERSION}/bin/pg_config"
 
     - name: Build and stage pg_search
       id: stage
       shell: bash
       env:
-        PG_VERSION: ${{ inputs.pg-version }}
+        PG_VERSION: ${{ steps.postgres.outputs.version }}
         BUILD_PROFILE: ${{ inputs.profile }}
         BUILD_FEATURES: ${{ inputs.features }}
         BUILD_TARGET: ${{ inputs.target }}
